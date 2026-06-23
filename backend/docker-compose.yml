@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    container_name: webman-admin
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8787:8787"
+    volumes:
+      - ./runtime:/app/runtime
+      - ./public/uploads:/app/public/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks: [webman]
+
+  mysql:
+    image: mysql:8.0
+    container_name: webman-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_DATABASE:-webman_admin}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/00-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [webman]
+
+  redis:
+    image: redis:7-alpine
+    container_name: webman-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks: [webman]
+
+volumes:
+  mysql-data:
+  redis-data:
+
+networks:
+  webman:
+    driver: bridge
