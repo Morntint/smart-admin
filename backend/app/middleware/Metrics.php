@@ -3,7 +3,6 @@
 namespace app\middleware;
 
 use app\common\support\MetricsCollector;
-use support\App;
 use Throwable;
 use Webman\Http\Request;
 use Webman\Http\Response;
@@ -39,7 +38,7 @@ class Metrics implements MiddlewareInterface
                 method: $request->method(),
                 statusCode: $response->getStatusCode(),
                 durationMs: $durationMs,
-                workerId: (int) (App::worker()?->id ?? 0),
+                workerId: (int) ($request->connection?->worker?->id ?? 0),
             );
         } catch (Throwable) {
             // fail-open：监控不影响业务

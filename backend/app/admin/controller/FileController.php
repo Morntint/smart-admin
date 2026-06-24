@@ -67,9 +67,7 @@ class FileController extends BaseController
             return $this->notFound('文件不存在');
         }
 
-        return response()->file($filePath, [
-            'Content-Disposition' => 'attachment; filename="' . rawurlencode((string) $file->original_name) . '"',
-        ]);
+        return response()->download($filePath, (string) $file->original_name);
     }
 
     /**

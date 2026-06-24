@@ -55,7 +55,13 @@ abstract class BaseModel extends Model
 
         $list = $query->offset(($page - 1) * $limit)->limit($limit)->get();
 
-        return compact('total', 'list', 'page', 'limit', 'total_pages');
+        return [
+            'total'       => $total,
+            'list'        => $list,
+            'page'        => $page,
+            'limit'       => $limit,
+            'total_pages' => $totalPages,
+        ];
     }
 
     /**
