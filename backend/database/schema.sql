@@ -24,6 +24,7 @@ CREATE TABLE `sys_user` (
   `login_ip` varchar(50) DEFAULT NULL COMMENT '最后登录IP',
   `login_time` datetime DEFAULT NULL COMMENT '最后登录时间',
   `login_count` int unsigned DEFAULT '0' COMMENT '登录次数',
+  `token_version` int unsigned NOT NULL DEFAULT '0' COMMENT 'Token版本号: 改密/重置/禁用/登出时自增, 使旧Token失效',
   `remark` varchar(500) DEFAULT NULL COMMENT '备注',
   `created_by` bigint unsigned DEFAULT NULL COMMENT '创建者',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

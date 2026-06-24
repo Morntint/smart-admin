@@ -102,7 +102,46 @@ class SysOperationLog extends BaseModel
     }
 
     /**
-     * 记录操作日志（统一入口）。
+     * 组装一行操作日志数据（在请求上下文内调用）。
+     *
+     * 用于入队：把依赖 request() 的字段（ip / user_agent / created_at）在此处取好，
+     * 消费进程脱离请求上下文也能直接批量写库。
+     *
+     * @param array<string,mixed>|null $param  请求参数
+     * @param array<string,mixed>|null $result 响应内容
+     * @return array<string,mixed>
+     */
+    public static function buildRow(
+        string  $method,
+        string  $url,
+        ?int    $userId   = null,
+        ?string $username = null,
+        ?string $module   = null,
+        ?array  $param    = null,
+        ?array  $result   = null,
+        bool    $status   = true,
+        ?string $errorMsg = null,
+        ?int    $duration = null
+    ): array {
+        return [
+            'method'     => $method,
+            'url'        => $url,
+            'module'     => $module,
+            'user_id'    => $userId,
+            'username'   => $username,
+            'param'      => $param  ? json_encode($param,  JSON_UNESCAPED_UNICODE) : null,
+            'result'     => $result ? json_encode($result, JSON_UNESCAPED_UNICODE) : null,
+            'ip'         => request()?->getRealIp(),
+            'user_agent' => request()?->header('user-agent'),
+            'status'     => $status ? self::STATUS_NORMAL : self::STATUS_ABNORMAL,
+            'error_msg'  => $errorMsg,
+            'duration'   => $duration,
+            'created_at' => date('Y-m-d H:i:s'),
+        ];
+    }
+
+    /**
+     * 记录操作日志（统一入口，同步写库）。
      *
      * @param array<string,mixed>|null $param  请求参数
      * @param array<string,mixed>|null $result 响应内容
@@ -119,19 +158,9 @@ class SysOperationLog extends BaseModel
         ?string $errorMsg = null,
         ?int    $duration = null
     ): self {
-        return self::create([
-            'method'     => $method,
-            'url'        => $url,
-            'module'     => $module,
-            'user_id'    => $userId,
-            'username'   => $username,
-            'param'      => $param  ? json_encode($param,  JSON_UNESCAPED_UNICODE) : null,
-            'result'     => $result ? json_encode($result, JSON_UNESCAPED_UNICODE) : null,
-            'ip'         => request()->getRealIp(),
-            'user_agent' => request()->header('user-agent'),
-            'status'     => $status ? self::STATUS_NORMAL : self::STATUS_ABNORMAL,
-            'error_msg'  => $errorMsg,
-            'duration'   => $duration,
-        ]);
+        return self::create(self::buildRow(
+            $method, $url, $userId, $username, $module,
+            $param, $result, $status, $errorMsg, $duration
+        ));
     }
 }

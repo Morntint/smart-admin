@@ -4,7 +4,9 @@ namespace app\admin\controller;
 
 use app\admin\service\UserService;
 use app\admin\validation\UserValidator;
+use app\common\attribute\Idempotent;
 use app\common\attribute\RequiresPermission;
+use OpenApi\Attributes as OA;
 use support\annotation\route\Delete;
 use support\annotation\route\DisableDefaultRoute;
 use support\annotation\route\Get;
@@ -36,6 +38,26 @@ class UserController extends BaseController
     /**
      * 用户分页列表
      */
+    #[OA\Get(
+        path: '/admin/user',
+        summary: '用户分页列表',
+        tags: ['用户管理'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer', default: 1)),
+            new OA\Parameter(name: 'limit', in: 'query', schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'keyword', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string', enum: ['0', '1'])),
+            new OA\Parameter(name: 'dept_id', in: 'query', schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: '成功',
+                content: new OA\JsonContent(ref: '#/components/schemas/Pagination')
+            ),
+        ]
+    )]
     #[Get('/user')]
     #[Validate(rules: [
         'page'    => 'integer|min:1',
@@ -90,8 +112,42 @@ class UserController extends BaseController
     /**
      * 创建用户
      */
+    #[OA\Post(
+        path: '/admin/user',
+        summary: '创建用户',
+        tags: ['用户管理'],
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['username', 'password'],
+                properties: [
+                    new OA\Property(property: 'username', type: 'string', example: 'zhangsan'),
+                    new OA\Property(property: 'password', type: 'string', example: '123456'),
+                    new OA\Property(property: 'nickname', type: 'string', example: '张三'),
+                    new OA\Property(property: 'email', type: 'string', example: 'zhangsan@example.com'),
+                    new OA\Property(property: 'mobile', type: 'string', example: '13800138000'),
+                    new OA\Property(property: 'dept_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'status', type: 'integer', enum: [0, 1], example: 1),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: '创建成功',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccess')
+            ),
+            new OA\Response(
+                response: 409,
+                description: '用户名/手机号已存在',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiError')
+            ),
+        ]
+    )]
     #[Post('/user')]
     #[RequiresPermission('system:user:add')]
+    #[Idempotent(window: 5)]
     #[Validate(validator: UserValidator::class, scene: 'create')]
     public function store(Request $request): Response
     {

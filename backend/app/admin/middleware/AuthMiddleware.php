@@ -21,17 +21,18 @@ use Webman\MiddlewareInterface;
  *  1. 白名单路径放行（登录、验证码、公开接口）
  *  2. 解析 Token，失败抛 UnauthorizedException
  *  3. 解析并缓存用户信息，状态异常抛 UnauthorizedException
+ *  3.1 Token 版本校验（token_version），不一致即失效
  *  4. 注入 admin_user_id / admin_user 到 Request 上
  *  5. 超级管理员跳过权限检查
  *  6. 普通用户按控制器方法上的 #[RequiresPermission] 注解鉴权，失败抛 ForbiddenException
  *
  * 缓存策略：
  *  - 用户信息：auth_user_{id}（5 min）
- *  - 接口权限注解：按 "控制器::方法" 反射结果做请求进程内 static 缓存
+ *  - 接口权限注解：按 "控制器::方法" 反射结果做进程内 static 缓存（不可变数据，协程安全）
  *
- * 注意：本中间件保留实例字段（currentRequest/currentUser/isSuperAdmin）
- *      用于单次请求内复用计算结果，每次 process 入口会重置，避免
- *      跨请求泄漏。
+ * 协程安全：本中间件**不持有任何请求级可变实例字段**。所有请求态（用户信息、
+ *      是否超管）通过局部变量与方法参数传递，因此单例在协程并发下也不会串号。
+ *      切勿在此类中新增「随请求变化」的实例属性。
  */
 class AuthMiddleware implements MiddlewareInterface
 {
@@ -43,23 +44,10 @@ class AuthMiddleware implements MiddlewareInterface
     ];
 
     /** 用户信息缓存 TTL（秒） */
-    private const USER_CACHE_TTL      = 300;
-
-    private ?Request $currentRequest = null;
-
-    /** @var array<string,mixed>|null 当前请求解析后的用户信息 */
-    private ?array $currentUser = null;
-
-    /** @var bool|null 当前用户是否为超管（请求内缓存） */
-    private ?bool $isSuperAdmin = null;
+    private const USER_CACHE_TTL = 300;
 
     public function process(Request $request, callable $handler): Response
     {
-        // 重置请求内状态，防止单例引发的请求间泄漏
-        $this->currentRequest = $request;
-        $this->currentUser    = null;
-        $this->isSuperAdmin   = null;
-
         // 1. 白名单
         if ($this->isExcept($request->path())) {
             return $handler($request);
@@ -77,17 +65,22 @@ class AuthMiddleware implements MiddlewareInterface
             throw new UnauthorizedException('账号状态异常或不存在');
         }
 
+        // 3.1 Token 版本校验：改密/重置/禁用/登出会自增 token_version 使旧 Token 失效
+        if ((int) ($payload['tv'] ?? 0) !== (int) ($user['token_version'] ?? 0)) {
+            throw new UnauthorizedException('登录状态已失效，请重新登录');
+        }
+
         // 4. 注入到 Request
         $request->admin_user_id = $user['id'];
         $request->admin_user    = $user;
 
         // 5. 超级管理员跳过权限检查
-        if ($this->isSuperAdmin()) {
+        if (PermissionService::getInstance()->isSuperAdmin((int) $user['id'])) {
             return $handler($request);
         }
 
         // 6. 权限校验
-        if (!$this->checkPermission($request)) {
+        if (!$this->checkPermission($request, (int) $user['id'])) {
             throw new ForbiddenException('无权限访问');
         }
 
@@ -141,7 +134,7 @@ class AuthMiddleware implements MiddlewareInterface
             if (((int) ($cached['status'] ?? 0)) !== SysUser::STATUS_NORMAL) {
                 return null;
             }
-            return $this->currentUser = $cached;
+            return $cached;
         }
 
         $user = SysUser::find($userId);
@@ -150,26 +143,17 @@ class AuthMiddleware implements MiddlewareInterface
         }
 
         $data = [
-            'id'       => $user->id,
-            'username' => $user->username,
-            'nickname' => $user->nickname,
-            'avatar'   => $user->avatar,
-            'dept_id'  => $user->dept_id,
-            'status'   => $user->status,
+            'id'            => $user->id,
+            'username'      => $user->username,
+            'nickname'      => $user->nickname,
+            'avatar'        => $user->avatar,
+            'dept_id'       => $user->dept_id,
+            'status'        => $user->status,
+            'token_version' => (int) ($user->token_version ?? 0),
         ];
 
         cache([$cacheKey => $data], self::USER_CACHE_TTL);
-        return $this->currentUser = $data;
-    }
-
-    /**
-     * 判断当前用户是否为超级管理员（请求内缓存）。
-     */
-    private function isSuperAdmin(): bool
-    {
-        return $this->isSuperAdmin ??= PermissionService::getInstance()->isSuperAdmin(
-            (int) ($this->currentUser['id'] ?? 0)
-        );
+        return $data;
     }
 
     /**
@@ -177,7 +161,7 @@ class AuthMiddleware implements MiddlewareInterface
      *
      * 方法若未标注注解（含闭包/无控制器路由），表示无需鉴权，放行。
      */
-    private function checkPermission(Request $request): bool
+    private function checkPermission(Request $request, int $userId): bool
     {
         $controller = (string) ($request->controller ?? '');
         $action     = (string) ($request->action ?? '');
@@ -187,14 +171,14 @@ class AuthMiddleware implements MiddlewareInterface
             return true;
         }
 
-        return PermissionService::getInstance()->hasAnyPermission(
-            (int) ($this->currentUser['id'] ?? 0),
-            $permissions
-        );
+        return PermissionService::getInstance()->hasAnyPermission($userId, $permissions);
     }
 
     /**
      * 读取控制器方法上的 #[RequiresPermission] 权限标识（带进程内 static 缓存）。
+     *
+     * static 缓存的是「控制器::方法 → 权限标识」这一不可变映射，与请求无关，
+     * 因此在协程并发下安全（多协程读同一份只读数据）。
      *
      * @return string[]|null null 表示无注解（放行）
      */

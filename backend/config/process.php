@@ -12,6 +12,9 @@ global $argv;
  * - webman   ：HTTP 主进程，Worker 数 = CPU 核数 × 4
  * - monitor  ：开发期文件 / 内存监控（仅 Linux + 非 -d 守护模式）
  *
+ * 操作日志消费进程由 webman/redis-queue 插件提供，
+ * 见 config/plugin/webman/redis-queue/process.php。
+ *
  * 注意：监听端口可在 .env 中通过 APP_LISTEN 自定义；生产建议通过 Nginx
  * 反向代理到 0.0.0.0:8787。
  */

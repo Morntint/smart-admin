@@ -14,4 +14,6 @@
 
 return [
     support\bootstrap\Session::class,
+    // 慢查询监控：每个 Worker 启动时注册 DB::listen，超阈值 SQL 写日志（SLOW_QUERY_MS）
+    app\bootstrap\SlowQueryLogger::class,
 ];

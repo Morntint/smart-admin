@@ -2,6 +2,7 @@
 
 namespace app\middleware;
 
+use app\middleware\Concerns\HasCorsHeaders;
 use Webman\Http\Request;
 use Webman\Http\Response;
 use Webman\MiddlewareInterface;
@@ -11,10 +12,15 @@ use Webman\MiddlewareInterface;
  *
  * 职责：
  *  - 拦截所有以 `/.` 开头的静态资源请求（隐藏文件、.git、.env 等）→ 403
- *  - 透传普通响应；如需 CORS，可在此处统一注入响应头
+ *  - 为静态资源注入跨域响应头（规则同 config/cors.php，与 Cors 中间件一致）
+ *
+ * 说明：webman 静态资源走 config/static.php 的中间件链，不经过全局 '' 分组，
+ * 故此处复用 HasCorsHeaders 补齐静态资源的跨域头。
  */
 class StaticFile implements MiddlewareInterface
 {
+    use HasCorsHeaders;
+
     public function process(Request $request, callable $handler): Response
     {
         // 禁止访问以 . 开头的隐藏文件 / 目录
@@ -25,12 +31,6 @@ class StaticFile implements MiddlewareInterface
         /** @var Response $response */
         $response = $handler($request);
 
-        // 如需开启 CORS，请改成项目实际白名单逻辑
-        // $response->withHeaders([
-        //     'Access-Control-Allow-Origin'      => '*',
-        //     'Access-Control-Allow-Credentials' => 'true',
-        // ]);
-
-        return $response;
+        return $this->withCors($request, $response);
     }
 }

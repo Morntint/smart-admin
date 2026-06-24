@@ -191,6 +191,10 @@ class UserService extends BaseService
         $user->updated_by = $operatorId;
         $user->updated_at = $this->now();
         $user->save();
+
+        // 重置密码后使该用户已签发的 Token 全部失效，强制重新登录
+        $user->bumpTokenVersion();
+        clear_permission_cache($id);
     }
 
     /**
@@ -213,6 +217,10 @@ class UserService extends BaseService
         $user->password   = make_password($newPassword);
         $user->updated_at = $this->now();
         $user->save();
+
+        // 改密后使旧 Token 全部失效（含当前会话），前端应引导重新登录
+        $user->bumpTokenVersion();
+        clear_permission_cache($userId);
     }
 
     /**
@@ -263,6 +271,11 @@ class UserService extends BaseService
         $user->updated_by = $operatorId;
         $user->updated_at = $this->now();
         $user->save();
+
+        // 禁用时使其已签发 Token 立即失效（与状态校验形成双保险，避免缓存窗口期内仍可访问）
+        if ($user->status === SysUser::STATUS_DISABLED) {
+            $user->bumpTokenVersion();
+        }
 
         clear_permission_cache($id);
         return $user;

@@ -5,10 +5,13 @@ namespace app\exception;
 use app\common\exception\BusinessException;
 use app\common\exception\ForbiddenException;
 use app\common\exception\ResourceNotFoundException;
+use app\common\exception\TooManyRequestsException;
 use app\common\exception\UnauthorizedException;
 use app\common\exception\ValidationException;
 use app\common\ResponseCode;
+use app\common\support\TraceContext;
 use support\exception\Handler as SupportHandler;
+use support\exception\PageNotFoundException;
 use support\Log;
 use Throwable;
 use Webman\Http\Request;
@@ -37,7 +40,11 @@ class Handler extends SupportHandler
         ResourceNotFoundException::class,
         ForbiddenException::class,
         UnauthorizedException::class,
+        TooManyRequestsException::class,
         BusinessException::class,
+        // 框架级 404：路由未匹配（如浏览器/爬虫探测 /.well-known、favicon 等），
+        // 属客户端错误，不应污染 ERROR 日志。
+        PageNotFoundException::class,
     ];
 
     /**
@@ -95,10 +102,25 @@ class Handler extends SupportHandler
             $body['data'] = ['errors' => $exception->getErrors()];
         }
 
-        return $this->jsonResponse(
+        // 服务端错误携带 request_id，便于用户上报、运维按 id 检索日志定位
+        if ($code >= 500) {
+            $requestId = TraceContext::id();
+            if ($requestId !== '') {
+                $body['request_id'] = $requestId;
+            }
+        }
+
+        $response = $this->jsonResponse(
             $code >= 500 ? 500 : 200, // HTTP 状态码：5xx 用 500，其余统一 200（约定使用 body.code 区分）
             $body
         );
+
+        // 限流异常补充 Retry-After，告知客户端重试等待秒数
+        if ($exception instanceof TooManyRequestsException) {
+            $response->withHeader('Retry-After', (string) $exception->retryAfter);
+        }
+
+        return $response;
     }
 
     /**
@@ -112,6 +134,7 @@ class Handler extends SupportHandler
             $e instanceof ResourceNotFoundException => ResponseCode::NOT_FOUND->value,
             $e instanceof ForbiddenException        => ResponseCode::FORBIDDEN->value,
             $e instanceof UnauthorizedException     => ResponseCode::UNAUTHORIZED->value,
+            $e instanceof TooManyRequestsException  => ResponseCode::TOO_MANY_REQUESTS->value,
             default                                  => ResponseCode::SERVER_ERROR->value,
         };
     }

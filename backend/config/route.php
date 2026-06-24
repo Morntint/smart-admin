@@ -17,6 +17,19 @@
 
 use Webman\Route;
 
+// Prometheus 指标端点（鉴权由 MetricsController 内的 METRICS_TOKEN 控制）。
+// 显式注册而非注解路由：保持与业务控制器（app/admin）解耦，且不挂 admin 中间件链。
+Route::get('/metrics', [app\controller\MetricsController::class, 'index']);
+
+// Swagger UI 页面。静态文件处理不会把 /swagger 解析为目录下的 index.html，
+// 故显式注册路由返回该页面（同时兼容 /swagger 与 /swagger/）。
+Route::get('/swagger[/]', function () {
+    $file = public_path() . '/swagger/index.html';
+    return is_file($file)
+        ? response(file_get_contents($file))->withHeader('Content-Type', 'text/html; charset=utf-8')
+        : json(['code' => 404, 'msg' => 'swagger UI 未找到']);
+});
+
 // 浏览器跨域预检（OPTIONS）兜底路由。
 // 注解路由只注册了 GET/POST/PUT/DELETE 等业务方法，OPTIONS 预检会落到 404 fallback，
 // 而 404 fallback 绕过中间件链，导致 Cors 中间件无法注入跨域头、预检失败。

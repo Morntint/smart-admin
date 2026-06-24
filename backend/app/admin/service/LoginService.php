@@ -6,6 +6,7 @@ use app\common\enum\LoginTypeEnum;
 use app\common\enum\ResultStatusEnum;
 use app\common\exception\BusinessException;
 use app\common\ResponseCode;
+use app\common\support\RateLimiter;
 use app\model\SysLoginLog;
 use app\model\SysUser;
 
@@ -15,6 +16,7 @@ use app\model\SysUser;
  * 负责登录/退出/验证码的核心业务规则：
  *  - 用户名格式校验（防 SQL 注入与用户名枚举）
  *  - 验证码校验（按 captcha.enabled 配置开关）
+ *  - 账号级失败锁定（连续失败 N 次锁定 M 秒，防暴力破解）
  *  - 登录日志写入（成功 + 失败）
  *  - 登录后清理权限缓存
  *
@@ -27,6 +29,12 @@ class LoginService extends BaseService
 
     /** 用户名格式（3-32 位字母/数字/下划线） */
     private const USERNAME_REGEX = '/^[a-zA-Z0-9_]{3,32}$/';
+
+    /** 账号连续登录失败锁定阈值（次） */
+    private const MAX_LOGIN_FAILURES = 5;
+
+    /** 失败计数 / 锁定窗口（秒） */
+    private const LOGIN_LOCK_WINDOW = 900;
 
     protected string $modelClass = SysUser::class;
 
@@ -48,6 +56,15 @@ class LoginService extends BaseService
             throw new BusinessException('用户名或密码错误', ResponseCode::UNAUTHORIZED);
         }
 
+        // 1.1 账号失败锁定校验：超过阈值直接拒绝，不再校验密码（防暴力破解）
+        if (RateLimiter::attempts($this->lockKey($username)) >= self::MAX_LOGIN_FAILURES) {
+            $this->logLogin($username, null, false, '账号已被锁定', $ip);
+            throw new BusinessException(
+                sprintf('密码错误次数过多，账号已锁定，请 %d 分钟后再试', (int) (self::LOGIN_LOCK_WINDOW / 60)),
+                ResponseCode::TOO_MANY_REQUESTS
+            );
+        }
+
         // 2. 验证码校验（按配置开关）
         if (config('captcha.enabled', false) && !$this->verifyCaptcha($captchaKey, $captcha)) {
             throw BusinessException::badRequest('验证码错误或已过期');
@@ -56,6 +73,7 @@ class LoginService extends BaseService
         // 3. 用户存在性 + 状态校验
         $user = SysUser::where('username', $username)->first();
         if (!$user) {
+            $this->recordLoginFailure($username);
             $this->logLogin($username, null, false, '用户不存在', $ip);
             throw new BusinessException('用户名或密码错误', ResponseCode::UNAUTHORIZED);
         }
@@ -66,9 +84,13 @@ class LoginService extends BaseService
 
         // 4. 密码校验
         if (!$user->verifyPassword($password)) {
+            $this->recordLoginFailure($username);
             $this->logLogin($username, $user->id, false, '密码错误', $ip);
             throw new BusinessException('用户名或密码错误', ResponseCode::UNAUTHORIZED);
         }
+
+        // 登录成功：清除失败计数
+        RateLimiter::clear($this->lockKey($username));
 
         // 5. 更新登录信息
         $user->login_ip    = $ip;
@@ -82,6 +104,7 @@ class LoginService extends BaseService
             'token' => JwtService::getInstance()->encode([
                 'user_id'  => $user->id,
                 'username' => $user->username,
+                'tv'       => (int) ($user->token_version ?? 0),
             ]),
             'user' => [
                 'id'       => $user->id,
@@ -112,6 +135,9 @@ class LoginService extends BaseService
             'status'     => ResultStatusEnum::SUCCESS->value,
             'msg'        => '退出成功',
         ]);
+
+        // 自增 Token 版本，使当前 Token 立即失效（防止登出后旧 Token 仍可用）
+        SysUser::where('id', $userId)->increment('token_version');
 
         clear_permission_cache($userId);
     }
@@ -150,6 +176,22 @@ class LoginService extends BaseService
         }
         cache()->delete($cacheKey);
         return strtolower($input) === $stored;
+    }
+
+    /**
+     * 记录一次登录失败（账号维度计数，窗口内累计）。
+     */
+    private function recordLoginFailure(string $username): void
+    {
+        RateLimiter::increment($this->lockKey($username), self::LOGIN_LOCK_WINDOW);
+    }
+
+    /**
+     * 账号失败锁定计数键（按用户名，忽略大小写差异由格式校验保证）。
+     */
+    private function lockKey(string $username): string
+    {
+        return 'login_fail:' . strtolower($username);
     }
 
     /**

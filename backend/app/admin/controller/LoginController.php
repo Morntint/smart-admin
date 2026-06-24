@@ -5,6 +5,7 @@ namespace app\admin\controller;
 use app\admin\service\JwtService;
 use app\admin\service\LoginService;
 use app\admin\validation\LoginValidator;
+use app\common\attribute\RateLimit;
 use app\common\traits\ApiResponse;
 use support\annotation\route\DisableDefaultRoute;
 use support\annotation\route\Get;
@@ -38,8 +39,11 @@ class LoginController
 
     /**
      * 用户登录
+     *
+     * 限流：同一 IP 每分钟最多 10 次登录尝试，配合 LoginService 的「账号级失败锁定」双重防爆破。
      */
     #[Post('/login')]
+    #[RateLimit(limit: 10, window: 60, by: 'ip', key: 'login')]
     #[Validate(validator: LoginValidator::class, scene: 'login')]
     public function login(Request $request): Response
     {
@@ -71,8 +75,11 @@ class LoginController
 
     /**
      * 获取图形验证码
+     *
+     * 限流：防止刷验证码接口耗尽服务端资源。
      */
     #[Get('/captcha')]
+    #[RateLimit(limit: 30, window: 60, by: 'ip', key: 'captcha')]
     public function captcha(Request $request): Response
     {
         return $this->success($this->loginService->captcha());
@@ -95,6 +102,7 @@ class LoginController
             'token' => JwtService::getInstance()->encode([
                 'user_id'  => $userId,
                 'username' => $username,
+                'tv'       => (int) ($request->admin_user['token_version'] ?? 0),
             ]),
         ], '刷新成功');
     }

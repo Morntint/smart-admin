@@ -57,6 +57,7 @@ class SysUser extends BaseModel
         'login_ip',
         'login_time',
         'login_count',
+        'token_version',
         'created_by',
         'updated_by',
     ];
@@ -153,5 +154,16 @@ class SysUser extends BaseModel
     public function isSuperAdmin(): bool
     {
         return (int) $this->id === 1;
+    }
+
+    /**
+     * 自增 Token 版本号，使该用户此前签发的所有 Token 立即失效。
+     *
+     * 调用时机：修改密码、重置密码、禁用账号、删除账号、强制下线。
+     * 原子自增，避免并发覆盖；同时清理用户缓存由调用方负责（clear_permission_cache）。
+     */
+    public function bumpTokenVersion(): void
+    {
+        $this->increment('token_version');
     }
 }

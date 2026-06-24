@@ -136,3 +136,26 @@ if (!function_exists('cache')) {
         };
     }
 }
+
+if (!function_exists('cache_remember')) {
+    /**
+     * 带防护的缓存「记住」：命中返回，未命中回源并写缓存。
+     *
+     * 内置防穿透（空值缓存）、防击穿（互斥锁回源）、防雪崩（TTL 抖动），
+     * 详见 app\common\support\CacheGuard。
+     *
+     * 用法：
+     *   $cfg = cache_remember('system_config', 86400, fn() => SysConfig::loadAll());
+     *
+     * @template T
+     * @param string       $key
+     * @param int          $ttl      正常值 TTL（秒）
+     * @param callable():T $callback 回源闭包
+     * @return T|null
+     */
+    function cache_remember(string $key, int $ttl, callable $callback): mixed
+    {
+        return \app\common\support\CacheGuard::remember($key, $ttl, $callback);
+    }
+}
+

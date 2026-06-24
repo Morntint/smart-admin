@@ -2,6 +2,7 @@
 
 namespace app\middleware;
 
+use app\middleware\Concerns\HasCorsHeaders;
 use Webman\Http\Request;
 use Webman\Http\Response;
 use Webman\MiddlewareInterface;
@@ -15,9 +16,12 @@ use Webman\MiddlewareInterface;
  *
  * 说明：作为全局中间件注册（config/middleware.php 的 '' 分组），
  * 即使路由未匹配（404）也会先经过本中间件，预检才能成功。
+ * 跨域规则统一来自 config/cors.php，与 StaticFile 共享。
  */
 class Cors implements MiddlewareInterface
 {
+    use HasCorsHeaders;
+
     public function process(Request $request, callable $handler): Response
     {
         // 预检请求直接放行，不进入业务路由
@@ -27,14 +31,6 @@ class Cors implements MiddlewareInterface
             $response = $handler($request);
         }
 
-        $origin = $request->header('origin', '*');
-
-        return $response->withHeaders([
-            'Access-Control-Allow-Origin'      => $origin,
-            'Access-Control-Allow-Credentials' => 'true',
-            'Access-Control-Allow-Methods'     => 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-            'Access-Control-Allow-Headers'     => 'Authorization, Content-Type, X-Requested-With, Accept, Origin',
-            'Access-Control-Max-Age'           => '86400',
-        ]);
+        return $this->withCors($request, $response);
     }
 }

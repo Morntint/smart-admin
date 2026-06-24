@@ -58,15 +58,15 @@ class SysConfig extends BaseModel
         static $configs = null;
 
         if ($configs === null) {
-            $configs = cache(self::CACHE_KEY);
-
-            if ($configs === null) {
-                $configs = [];
+            // cache_remember：命中直接返回；未命中时用互斥锁防止并发回源击穿，
+            // 高并发下大量请求同时遇到缓存失效也只有一个查库（见 CacheGuard）。
+            $configs = cache_remember(self::CACHE_KEY, self::CACHE_TTL, function () {
+                $map = [];
                 foreach (self::query()->get() as $item) {
-                    $configs[$item->key] = $item->value;
+                    $map[$item->key] = $item->value;
                 }
-                cache([self::CACHE_KEY => $configs], self::CACHE_TTL);
-            }
+                return $map;
+            }) ?? [];
         }
 
         return $configs[$key] ?? $default;
