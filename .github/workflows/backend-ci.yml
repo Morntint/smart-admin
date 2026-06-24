@@ -42,7 +42,9 @@ jobs:
           tools: composer:v2
 
       - name: Validate composer.json
-        run: composer validate --strict
+        # 不用 --strict：webman 依赖 autoload.psr-4 空命名空间前缀 "": "./"，
+        # --strict 会把这条必要的警告当成错误。去掉后仍校验 schema 错误。
+        run: composer validate
 
       - name: Cache Composer packages
         uses: actions/cache@v4
