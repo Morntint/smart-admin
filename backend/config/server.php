@@ -16,7 +16,11 @@
  */
 return [
     // 协程驱动：在 .env 设 WM_EVENT_LOOP=Swoole（需 ext-swoole>=5）或 Swow；留空为同步多进程模型
-    'event_loop'       => env('WM_EVENT_LOOP', ''),
+    'event_loop'       => match (env('WM_EVENT_LOOP', '')) {
+        'Swoole' => \Workerman\Events\Swoole::class,
+        'Swow'   => \Workerman\Events\Swow::class,
+        default  => '',
+    },
     'stop_timeout'     => (int) env('WM_STOP_TIMEOUT', 2),
     'pid_file'         => runtime_path() . '/webman.pid',
     'status_file'      => runtime_path() . '/webman.status',

@@ -17,6 +17,11 @@
 
 use Webman\Route;
 
+// 健康检查（Docker HEALTHCHECK 用）
+Route::get('/ping', function () {
+    return json(['code' => 200, 'msg' => 'pong']);
+});
+
 // Prometheus 指标端点（鉴权由 MetricsController 内的 METRICS_TOKEN 控制）。
 // 显式注册而非注解路由：保持与业务控制器（app/admin）解耦，且不挂 admin 中间件链。
 Route::get('/metrics', [app\controller\MetricsController::class, 'index']);

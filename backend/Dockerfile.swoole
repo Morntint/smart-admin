@@ -1,0 +1,84 @@
+# ──────────────────────────────────────────────────────────────
+# Webman Admin 生产镜像（协程版 / Swoole）
+#
+# 在基础镜像之上预装 Swoole 扩展并默认启用协程驱动。
+# 协程模型下单进程内多协程并发，database/redis 连接池才真正生效。
+# 切换前请阅读 docs/COROUTINE.md，并先在压测环境验证。
+#
+# 使用：
+#   docker build -f Dockerfile.swoole -t webman-admin:swoole .
+#   docker run -d -p 8787:8787 --env-file .env webman-admin:swoole
+#
+# 国内网络若无法连接 Docker Hub，可换阿里云镜像源构建：
+#   docker build -f Dockerfile.swoole -t webman-admin:swoole \
+#     --build-arg PHP_IMAGE=registry.cn-hangzhou.aliyuncs.com/library/php:8.3-cli-alpine .
+# ──────────────────────────────────────────────────────────────
+FROM php:8.3-cli-alpine AS base
+
+LABEL maintainer="ops@example.com"
+
+# ─── 系统依赖 ─────────────────────────────────────────────────
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
+ && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
+ && apk add --no-cache libstdc++ libgcc \
+    openssl-dev curl-dev linux-headers c-ares-dev \
+ && docker-php-source extract
+
+# ─── PHP 扩展 ────────────────────────────────────────────────
+RUN docker-php-ext-install -j$(nproc) pdo pdo_mysql pcntl bcmath \
+ && docker-php-ext-enable opcache pcntl
+
+# ─── Swoole 协程扩展（>= 5.0）─────────────────────────────────
+# pecl install --configureoptions 有 bug，改用手动下载源码编译
+RUN cd /tmp \
+ && pecl download swoole \
+ && tar -xzf swoole-*.tgz \
+ && rm -f swoole-*.tgz \
+ && cd swoole-* \
+ && phpize \
+ && ./configure --enable-openssl --enable-http2 --enable-swoole-curl --enable-cares \
+ && make -j$(nproc) \
+ && make install \
+ && docker-php-ext-enable swoole \
+ && rm -rf /tmp/swoole-*
+
+# ─── Redis 扩展（MetricsCollector::queueBacklog 需要原生 \Redis 类）──────────
+RUN pecl channel-update pecl.php.net \
+ && pecl install redis \
+ && docker-php-ext-enable redis
+
+# ─── PHP 配置 ────────────────────────────────────────────────
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+ && echo "memory_limit=512M"           >> "$PHP_INI_DIR/conf.d/00-app.ini" \
+ && echo "date.timezone=Asia/Shanghai" >> "$PHP_INI_DIR/conf.d/00-app.ini" \
+ && echo "opcache.enable=1"            >> "$PHP_INI_DIR/conf.d/00-app.ini" \
+ && echo "opcache.enable_cli=1"        >> "$PHP_INI_DIR/conf.d/00-app.ini" \
+ && echo "opcache.jit_buffer_size=128M">> "$PHP_INI_DIR/conf.d/00-app.ini"
+
+# ─── 协程默认环境变量（运行时可覆盖）───────────────────────────
+ENV WM_EVENT_LOOP=Swoole \
+    WORKER_COUNT=4 \
+    DB_POOL_MAX=20 \
+    DB_POOL_MIN=5 \
+    REDIS_POOL_MAX=20 \
+    REDIS_POOL_MIN=5
+
+# ─── 清理 ────────────────────────────────────────────────────
+RUN docker-php-source delete \
+ && apk del .build-deps \
+ && rm -rf /var/cache/apk/* /tmp/* /tmp/pear
+
+# ─── 应用 ────────────────────────────────────────────────────
+WORKDIR /app
+COPY . /app
+
+EXPOSE 8787
+
+# 优雅停止：SIGTERM 触发 webman 的 stop 流程
+STOPSIGNAL SIGTERM
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget -q -O - http://127.0.0.1:8787/ping || exit 1
+
+CMD ["php", "start.php", "start"]

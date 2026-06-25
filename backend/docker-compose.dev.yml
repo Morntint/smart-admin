@@ -1,0 +1,27 @@
+# 开发覆盖：不启动 mysql/redis，app 直接连本地 PHPStudy
+# 代码目录通过 volume 挂载，改代码无需重新打包镜像
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.swoole
+    container_name: webman-admin-dev
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8787:8787"
+    volumes:
+      # 代码实时挂载：改代码后 reload 即可生效（php start.php reload）
+      - .:/app
+      # 排除：vendor 保持镜像内版本，避免宿主机/容器不一致
+      - /app/vendor
+      # runtime 和 uploads 用宿主机目录，保持持久化
+      - ./runtime:/app/runtime
+      - ./public/uploads:/app/public/uploads
+    networks: [webman]
+
+networks:
+  webman:
+    driver: bridge
