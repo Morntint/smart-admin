@@ -27,14 +27,13 @@
               批量删除
             </ElButton>
             <ElPopconfirm
-              v-auth="'system:log:operationDel'"
               title="确定要清理 30 天前的操作日志吗？此操作不可恢复！"
               confirm-button-text="确定"
               cancel-button-text="取消"
               @confirm="clearLogs"
             >
               <template #reference>
-                <ElButton type="warning" v-ripple>清理日志</ElButton>
+                <ElButton type="warning" v-ripple v-auth="'system:log:operationDel'">清理日志</ElButton>
               </template>
             </ElPopconfirm>
           </ElSpace>

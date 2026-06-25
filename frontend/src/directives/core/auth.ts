@@ -38,6 +38,12 @@ import { App, Directive, DirectiveBinding } from 'vue'
 export type AuthDirective = Directive<HTMLElement, string>
 
 function checkAuthPermission(el: HTMLElement, binding: DirectiveBinding<string>): void {
+  // 安全检查：当指令用在根节点为 Fragment / Teleport 的组件上时，
+  // Vue 传入的 el 可能不是 HTMLElement（如注释节点），此时跳过 DOM 操作。
+  if (!(el instanceof HTMLElement)) {
+    return
+  }
+
   // 获取当前路由的权限列表
   const authList = (router.currentRoute.value.meta.authList as Array<{ authMark: string }>) || []
 

@@ -8,6 +8,7 @@ import '@styles/index.scss'                         // 样式
 import '@utils/sys/console.ts'                      // 控制台输出内容
 import { setupGlobDirectives } from './directives'
 import { setupErrorHandle } from './utils/sys/error-handle'
+import '@utils/ui/iconify-loader'                   // 离线图标加载（避免请求 api.unisvg.com）
 
 document.addEventListener(
   'touchstart',
