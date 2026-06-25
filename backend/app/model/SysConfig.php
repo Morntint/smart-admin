@@ -11,6 +11,15 @@ namespace app\model;
  *  - key 全局唯一，是配置的访问入口
  *  - 任意写操作必须调用 clearCache() 清缓存（getConfig 走静态缓存）
  *  - type 决定 getTypedValue() 返回值的类型
+ *
+ * @property string               $name
+ * @property string               $key
+ * @property string|null          $value
+ * @property string               $type
+ * @property string               $group
+ * @property string|null          $options
+ * @property int                  $sort
+ * @property string|null          $remark
  */
 class SysConfig extends BaseModel
 {

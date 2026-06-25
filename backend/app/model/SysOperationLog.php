@@ -10,6 +10,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * 表：sys_operation_log
  *
  * 由 OperationLog 中间件自动写入，记录所有 POST/PUT/PATCH/DELETE 写操作。
+ *
+ * @property string|null          $module
+ * @property string|null          $action
+ * @property string               $method
+ * @property string               $url
+ * @property string|null          $ip
+ * @property string|null          $user_agent
+ * @property int|null             $user_id
+ * @property string|null          $username
+ * @property string|null          $param
+ * @property string|null          $result
+ * @property int                  $status
+ * @property string|null          $error_msg
+ * @property int|null             $duration
+ * @property-read string          $status_text
+ * @property-read string          $method_color
+ * @property-read \app\model\SysUser|null $user
+ * @property array<string,mixed>|null $formatted_param
  */
 class SysOperationLog extends BaseModel
 {
@@ -41,7 +59,7 @@ class SysOperationLog extends BaseModel
     /**
      * 允许批量赋值的字段。
      *
-     * @var string[]
+     * @var array<int,string>
      */
     protected $fillable = [
         'module',

@@ -15,6 +15,29 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  *  - id = 1 为超级管理员（不可删除/不可改状态）
  *  - 密码使用 bcrypt 哈希（make_password / verifyPassword）
  *  - status = 1 正常 / 0 禁用，禁用后中间件拒绝其访问
+ *
+ * @property string               $username
+ * @property string               $password
+ * @property string|null          $nickname
+ * @property string|null          $avatar
+ * @property string|null          $email
+ * @property string|null          $mobile
+ * @property int                  $sex
+ * @property int                  $status
+ * @property int|null             $dept_id
+ * @property string|null          $login_ip
+ * @property string|null          $login_time
+ * @property int                  $login_count
+ * @property int                  $token_version
+ * @property string|null          $remark
+ * @property-read string          $status_text
+ * @property-read string          $sex_text
+ * @property-read \Illuminate\Database\Eloquent\Collection<int,\app\model\SysRole> $roles
+ * @property-read \app\model\SysDepartment|null $department
+ * @property-read int[]           $role_ids
+ * @property-write mixed          $dept_name
+ * @property-write mixed          $role_names
+ * @property-write mixed          $role_ids
  */
 class SysUser extends BaseModel
 {

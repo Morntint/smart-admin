@@ -10,6 +10,18 @@ namespace app\model;
  * 业务约束：
  *  - 仅插入不更新（$timestamps = false）
  *  - 由 LoginService 写入，OperationLog 中间件不会触碰
+ *
+ * @property int|null             $user_id
+ * @property string|null          $username
+ * @property int                  $login_type
+ * @property string|null          $ip
+ * @property string|null          $ip_location
+ * @property string|null          $user_agent
+ * @property int                  $status
+ * @property string|null          $msg
+ * @property-read string          $login_type_text
+ * @property-read string          $status_text
+ * @property string|null          $date          selectRaw 聚合别名
  */
 class SysLoginLog extends BaseModel
 {
@@ -31,7 +43,7 @@ class SysLoginLog extends BaseModel
     /**
      * 允许批量赋值的字段。
      *
-     * @var string[]
+     * @var array<int,string>
      */
     protected $fillable = [
         'user_id',

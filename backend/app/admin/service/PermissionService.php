@@ -74,10 +74,10 @@ class PermissionService implements PermissionServiceInterface
             return [];
         }
 
-        $permissions = $user->roles()
-            ->with('menus')
-            ->get()
-            ->flatMap(fn($role) => $role->menus->pluck('permission'))
+        /** @var \Illuminate\Database\Eloquent\Collection<int,\app\model\SysRole> $roles */
+        $roles = $user->roles()->with('menus')->get();
+        $permissions = $roles
+            ->flatMap(fn(\app\model\SysRole $role) => $role->menus->pluck('permission'))
             ->filter()
             ->unique()
             ->values()

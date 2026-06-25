@@ -94,7 +94,7 @@ class UserController extends BaseController
             'nickname' => $user->nickname,
             'avatar' => $user->avatar,
             'email' => $user->email,
-            'phone' => $user->phone,
+            'phone' => $user->mobile,
             'roles' => $user->roles ? $user->roles->pluck('code')->all() : [],
             'buttons' => \app\admin\service\PermissionService::getInstance()->getPermissions($this->userId),
         ]);

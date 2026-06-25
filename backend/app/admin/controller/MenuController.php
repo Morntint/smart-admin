@@ -88,9 +88,9 @@ class MenuController extends BaseController
     #[Get('/menu/export')]
     public function export(Request $request): Response
     {
-        return $this->success(
-            SysMenu::orderBy('sort', 'asc')->orderBy('id', 'asc')->get()->toTree()
-        );
+        /** @var \Illuminate\Database\Eloquent\Collection<int,\app\model\SysMenu> $menus */
+        $menus = SysMenu::orderBy('sort', 'asc')->orderBy('id', 'asc')->get();
+        return $this->success($menus->toTree());
     }
 
     /**

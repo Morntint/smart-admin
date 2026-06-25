@@ -37,7 +37,9 @@ class DeptService extends BaseService
             filters: ['status' => $request->get('status', '')],
             like:    ['name'   => $request->get('keyword', '')]
         );
-        return $query->orderBy('sort', 'asc')->orderBy('id', 'asc')->get()->toTree();
+        /** @var \Illuminate\Database\Eloquent\Collection<int,\app\model\SysDepartment> $list */
+        $list = $query->orderBy('sort', 'asc')->orderBy('id', 'asc')->get();
+        return $list->toTree();
     }
 
     /**
@@ -73,14 +75,16 @@ class DeptService extends BaseService
      */
     public function userTree(): array
     {
-        $depts = SysDepartment::where('status', SysDepartment::STATUS_NORMAL)
+        /** @var \Illuminate\Database\Eloquent\Collection<int,\app\model\SysDepartment> $deptList */
+        $deptList = SysDepartment::where('status', SysDepartment::STATUS_NORMAL)
                               ->orderBy('sort', 'asc')
-                              ->get(['id', 'parent_id', 'name'])
-                              ->toTree();
+                              ->get(['id', 'parent_id', 'name']);
+        $depts = $deptList->toTree();
 
-        $users = SysUser::where('status', SysUser::STATUS_NORMAL)
-                        ->get(['id', 'dept_id', 'username', 'nickname'])
-                        ->groupBy('dept_id');
+        /** @var \Illuminate\Database\Eloquent\Collection<int,\app\model\SysUser> $userList */
+        $userList = SysUser::where('status', SysUser::STATUS_NORMAL)
+                        ->get(['id', 'dept_id', 'username', 'nickname']);
+        $users = $userList->groupBy('dept_id');
 
         return $this->attachUsersToTree($depts, $users);
     }
@@ -90,6 +94,7 @@ class DeptService extends BaseService
      */
     public function detail(int $id): SysDepartment
     {
+        /** @var SysDepartment|null $dept */
         $dept = SysDepartment::leftJoin('sys_department as parent', 'sys_department.parent_id', '=', 'parent.id')
                              ->select('sys_department.*', 'parent.name as parent_name')
                              ->where('sys_department.id', $id)

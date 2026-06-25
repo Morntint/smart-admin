@@ -55,7 +55,7 @@ LUA;
      * @param string        $key      缓存键
      * @param int           $ttl      正常值 TTL（秒），内部会叠加抖动
      * @param callable():T  $callback 回源闭包
-     * @param int           $jitter   抖动比例覆盖（0 表示禁用抖动）；默认用内置 10%
+     * @param float|null    $jitter   抖动比例覆盖（0 表示禁用抖动）；默认用内置 10%
      * @return T|null
      */
     public static function remember(string $key, int $ttl, callable $callback, ?float $jitter = null): mixed

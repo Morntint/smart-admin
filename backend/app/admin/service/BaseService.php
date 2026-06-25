@@ -150,16 +150,24 @@ abstract class BaseService
                 }
                 // 可见部门集合为空 → 返回空结果集，避免漏过滤变成看全部
                 if ($scope['deptIds'] === []) {
-                    return $query->whereRaw('1 = 0');
+                    /** @var Builder $result */
+                    $result = $query->whereRaw('1 = 0');
+                    return $result;
                 }
-                return $query->whereIn($deptField, $scope['deptIds']);
+                /** @var Builder $result */
+                $result = $query->whereIn($deptField, $scope['deptIds']);
+                return $result;
 
             case 'self':
                 // 无法定位「本人」列 → 空集，保守防越权
                 if ($userField === null) {
-                    return $query->whereRaw('1 = 0');
+                    /** @var Builder $result */
+                    $result = $query->whereRaw('1 = 0');
+                    return $result;
                 }
-                return $query->where($userField, $userId);
+                /** @var Builder $result */
+                $result = $query->where($userField, $userId);
+                return $result;
         }
 
         return $query;
@@ -172,7 +180,7 @@ abstract class BaseService
      * @param Request $request
      * @param int     $defaultLimit
      * @param int     $maxLimit
-     * @return array{list:Collection,total:int,page:int,limit:int}
+     * @return array{list:\Illuminate\Database\Eloquent\Collection,total:int,page:int,limit:int}
      */
     protected function paginate(Builder $query, Request $request, int $defaultLimit = 15, int $maxLimit = 100): array
     {
@@ -180,6 +188,7 @@ abstract class BaseService
         $limit = min($maxLimit, max(1, (int) $request->get('limit', $defaultLimit)));
 
         $total = (clone $query)->count();
+        /** @var \Illuminate\Database\Eloquent\Collection $list */
         $list  = $query->orderBy('id', 'desc')
                        ->offset(($page - 1) * $limit)
                        ->limit($limit)

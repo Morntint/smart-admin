@@ -41,10 +41,13 @@ class RoleService extends BaseService
         );
 
         $result = $this->paginate($query, $request);
-        $result['list']->each(function (SysRole $role) {
+        /** @var \Illuminate\Database\Eloquent\Collection<int,SysRole> $list */
+        $list = $result['list'];
+        $list->each(function (SysRole $role) {
             $role->menu_ids = $role->menus->pluck('id');
             $role->makeHidden(['menus']);
         });
+        $result['list'] = $list;
         return $result;
     }
 

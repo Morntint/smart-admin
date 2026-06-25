@@ -8,13 +8,16 @@ namespace app\model;
  * 表：sys_user_role
  *
  * 仅作为多对多中间表，不维护时间戳。
+ *
+ * @property int                  $user_id
+ * @property int                  $role_id
  */
 class SysUserRole extends BaseModel
 {
     protected $table   = 'sys_user_role';
     public    $timestamps = false;
 
-    /** @var string[] */
+    /** @var array<int,string> */
     protected $fillable = ['user_id', 'role_id'];
 
     /**

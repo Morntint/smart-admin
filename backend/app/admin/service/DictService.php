@@ -37,14 +37,17 @@ class DictService extends BaseService
         );
 
         $result = $this->paginate($query, $request);
-        $ids    = $result['list']->pluck('id')->all();
+        /** @var \Illuminate\Database\Eloquent\Collection<int,SysDict> $list */
+        $list = $result['list'];
+        $ids    = $list->pluck('id')->all();
 
         $dataCounts = SysDictData::whereIn('dict_id', $ids)
                                  ->groupBy('dict_id')
                                  ->selectRaw('dict_id, COUNT(*) as cnt')
                                  ->pluck('cnt', 'dict_id');
 
-        $result['list']->each(fn(SysDict $d) => $d->data_count = $dataCounts[$d->id] ?? 0);
+        $list->each(fn(SysDict $d) => $d->data_count = $dataCounts[$d->id] ?? 0);
+        $result['list'] = $list;
         return $result;
     }
 

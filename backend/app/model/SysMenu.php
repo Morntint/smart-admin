@@ -16,6 +16,34 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  *  - 菜单分三类：DIR(1=目录) / MENU(2=菜单) / BUTTON(3=按钮)
  *  - 按钮必须设置 permission（权限标识）
  *  - 同 type 列表、parent_id 自关联实现树结构
+ *
+ * @property int                  $parent_id
+ * @property string               $name
+ * @property string|null          $route_name
+ * @property string|null          $icon
+ * @property string|null          $path
+ * @property string|null          $component
+ * @property string|null          $redirect
+ * @property int                  $type
+ * @property string|null          $permission
+ * @property int                  $sort
+ * @property int                  $status
+ * @property int                  $is_external
+ * @property int                  $is_cache
+ * @property int                  $is_visible
+ * @property int                  $is_hide_tab
+ * @property int                  $is_iframe
+ * @property int                  $is_full_page
+ * @property int                  $fixed_tab
+ * @property string|null          $active_path
+ * @property string|null          $remark
+ * @property-read string          $type_text
+ * @property-read string          $status_text
+ * @property-read \app\model\SysMenu|null $parent
+ * @property-read \Illuminate\Database\Eloquent\Collection<int,\app\model\SysMenu> $children
+ * @property-read \Illuminate\Database\Eloquent\Collection<int,\app\model\SysRole> $roles
+ * @property-read string          $parent_name
+ * @property-write string|null    $parent_name
  */
 class SysMenu extends BaseModel
 {
@@ -128,9 +156,14 @@ class SysMenu extends BaseModel
         return $this->belongsTo(self::class, 'parent_id');
     }
 
+    /**
+     * @return HasMany<static,static>
+     */
     public function children(): HasMany
     {
-        return $this->hasMany(self::class, 'parent_id')->orderBy('sort', 'asc');
+        /** @var HasMany<static,static> $relation */
+        $relation = $this->hasMany(self::class, 'parent_id')->orderBy('sort', 'asc');
+        return $relation;
     }
 
     public function roles(): BelongsToMany

@@ -14,6 +14,20 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  *  - code = 'super_admin' 为超级管理员（不可删除/不可改 code）
  *  - data_scope 表示数据权限范围（DataScopeEnum）
  *  - data_scope_depts：自定义部门范围（逗号分隔的部门 ID 列表）
+ *
+ * @property string               $name
+ * @property string               $code
+ * @property int                  $sort
+ * @property int                  $status
+ * @property int                  $data_scope
+ * @property string|null          $data_scope_depts
+ * @property string|null          $remark
+ * @property-read string          $status_text
+ * @property-read string          $data_scope_text
+ * @property-read \Illuminate\Database\Eloquent\Collection<int,\app\model\SysUser> $users
+ * @property-read \Illuminate\Database\Eloquent\Collection<int,\app\model\SysMenu> $menus
+ * @property mixed $menu_ids
+ * @property mixed $menu_permissions
  */
 class SysRole extends BaseModel
 {

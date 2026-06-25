@@ -12,6 +12,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * 业务约束：
  *  - 物理文件统一存放在 public/uploads/Y/m/d/ 下
  *  - 删除时需先删物理文件再删记录（FileService 已封装）
+ *
+ * @property string               $name
+ * @property string               $original_name
+ * @property string               $file_path
+ * @property string|null          $file_url
+ * @property int                  $file_size
+ * @property string|null          $file_ext
+ * @property string|null          $file_type
+ * @property string               $storage_type
+ * @property string|null          $upload_ip
+ * @property int|null             $upload_user_id
+ * @property int                  $download_count
+ * @property int                  $status
+ * @property string|null          $remark
+ * @property-read string          $full_url
+ * @property-read string          $formatted_size
+ * @property-read string          $file_icon
+ * @property-read \app\model\SysUser|null $user
+ * @property int|null             $count        聚合查询别名
+ * @property int|null             $total_size   聚合查询别名
  */
 class SysFile extends BaseModel
 {

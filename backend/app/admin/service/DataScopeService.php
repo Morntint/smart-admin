@@ -72,6 +72,7 @@ class DataScopeService
         }
 
         // 仅取正常状态角色
+        /** @var \Illuminate\Database\Eloquent\Collection<int,\app\model\SysRole> $roles */
         $roles = $user->roles()
             ->where('sys_role.status', SysRole::STATUS_NORMAL)
             ->get(['sys_role.id', 'data_scope', 'data_scope_depts']);

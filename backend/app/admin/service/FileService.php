@@ -211,7 +211,9 @@ class FileService extends BaseService
             throw BusinessException::badRequest('请选择要删除的文件');
         }
         $count = 0;
-        SysFile::whereIn('id', $ids)->get()->each(function (SysFile $file) use (&$count) {
+        /** @var \Illuminate\Database\Eloquent\Collection<int,SysFile> $files */
+        $files = SysFile::whereIn('id', $ids)->get();
+        $files->each(function (SysFile $file) use (&$count) {
             $this->deletePhysicalFile($file->file_path);
             $file->delete();
             $count++;

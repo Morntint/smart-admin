@@ -33,7 +33,9 @@ class MenuService extends BaseService
             'type' => $request->get('type', ''),
         ]);
 
-        return $query->orderBy('sort', 'asc')->orderBy('id', 'asc')->get()->toTree();
+        /** @var \Illuminate\Database\Eloquent\Collection<int,\app\model\SysMenu> $list */
+        $list = $query->orderBy('sort', 'asc')->orderBy('id', 'asc')->get();
+        return $list->toTree();
     }
 
     /**
@@ -61,10 +63,11 @@ class MenuService extends BaseService
             $query->whereIn('id', $menuIds);
         }
 
-        $menus = $query->orderBy('sort', 'asc')
+        /** @var \Illuminate\Database\Eloquent\Collection<int,\app\model\SysMenu> $menuList */
+        $menuList = $query->orderBy('sort', 'asc')
             ->orderBy('id', 'asc')
-            ->get()
-            ->toTree();
+            ->get();
+        $menus = $menuList->toTree();
 
         return array_map([$this, 'convertToRoute'], $menus);
     }
@@ -81,10 +84,10 @@ class MenuService extends BaseService
             return [];
         }
 
-        return $user->roles()
-            ->with('menus')
-            ->get()
-            ->flatMap(fn($role) => $role->menus->pluck('id'))
+        /** @var \Illuminate\Database\Eloquent\Collection<int,\app\model\SysRole> $roles */
+        $roles = $user->roles()->with('menus')->get();
+        return $roles
+            ->flatMap(fn(\app\model\SysRole $role) => $role->menus->pluck('id'))
             ->unique()
             ->values()
             ->all();

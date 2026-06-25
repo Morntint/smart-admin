@@ -12,6 +12,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  *
  * 业务约束：
  *  - dict_id + value 唯一（同一字典内 value 不可重复）
+ *
+ * @property int                  $dict_id
+ * @property string               $label
+ * @property string               $value
+ * @property string|null          $type
+ * @property int                  $sort
+ * @property int                  $status
+ * @property string|null          $remark
+ * @property-read \app\model\SysDict|null $dict
  */
 class SysDictData extends BaseModel
 {

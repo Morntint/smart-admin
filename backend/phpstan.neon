@@ -5,10 +5,24 @@ parameters:
     # 框架运行时定义的全局函数/魔术属性较多，排除噪声较大的检查
     excludePaths:
         - app/view/*
+    bootstrapFiles:
+        - phpstan-bootstrap.php
     ignoreErrors:
-        # webman 在 Request 上动态注入 admin_user_id / admin_user
-        - '#Access to an undefined property support\\Request::\$admin_user(_id)?#'
-        # 全局 helper 函数在运行时由 autoload.files 注入，静态分析可能识别不到
-        - '#Function (cache|cache_remember|sysConfig|safe_like|safe_like_pattern|now_datetime|make_password|clear_permission_cache) not found#'
+        # webman 在 Request 上动态注入 admin_user_id / admin_user / controller / action
+        - '#Access to an undefined property (support|Webman\\Http)\\Request::\$admin_user(_id)?#'
+        - '#Property Webman\\Http\\Request::\$controller \(string\) on left side of \?\? is not nullable#'
+        - '#Property Webman\\Http\\Request::\$action \(string\) on left side of \?\? is not nullable#'
+        # Redis::eval() 在 phpredis 扩展中实际支持 5 个参数，但 PHPStan 的 redis stubs 未同步
+        - '#Static method support\\Redis::eval\(\) invoked with 5 parameters, 2-4 required#'
+        # Collection::macro('toTree') 在 bootstrap 中已注册，PHPStan 无法通过静态分析识别宏方法
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Collection.*::toTree\(\)#'
+        # webman/captcha 的 CaptchaBuilder 实际有 getContent() 方法（扩展 stub 未覆盖）
+        - '#Call to an undefined method Webman\\Captcha\\CaptchaBuilder::getContent\(\)#'
+        # Eloquent increment() 在运行时公开可用，PHPStan stubs 标记为 protected
+        - '#Call to protected method increment\(\) of class Illuminate\\Database\\Eloquent\\Model#'
+        # phpredis 扩展的 Redis::client() 支持无参调用，PHPStan 内置 stubs 要求至少 1 个参数
+        - '#Method Redis::client\(\) invoked with 0 parameters, at least 1 required#'
+        # Monolog\LogRecord 的 extra 属性在 PHP 8.2+ 中通过 readonly 公开访问，PHPStan 早期 stubs 未识别
+        - '#Access to an undefined property Monolog\\LogRecord::\$extra#'
     # 不因 baseline 之外的弱类型报错中断（按需逐步收紧 level）
     treatPhpDocTypesAsCertain: false

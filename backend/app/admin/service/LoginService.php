@@ -71,6 +71,7 @@ class LoginService extends BaseService
         }
 
         // 3. 用户存在性 + 状态校验
+        /** @var SysUser|null $user */
         $user = SysUser::where('username', $username)->first();
         if (!$user) {
             $this->recordLoginFailure($username);

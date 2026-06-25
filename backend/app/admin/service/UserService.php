@@ -49,12 +49,15 @@ class UserService extends BaseService
         ]);
 
         $result = $this->paginate($query, $request);
-        $result['list']->load(['department', 'roles']);
-        $result['list']->each(function (SysUser $user) {
+        /** @var \Illuminate\Database\Eloquent\Collection<int,SysUser> $list */
+        $list = $result['list'];
+        $list->load(['department', 'roles']);
+        $list->each(function (SysUser $user) {
             $user->dept_name  = $user->department?->name;
             $user->role_names = $user->roles->pluck('name');
             $user->makeHidden(['department', 'roles']);
         });
+        $result['list'] = $list;
 
         return $result;
     }
@@ -295,7 +298,9 @@ class UserService extends BaseService
             ['username', 'nickname']
         );
 
-        return $query->orderBy('id', 'desc')->get()->map(fn(SysUser $u) => [
+        /** @var \Illuminate\Database\Eloquent\Collection<int,SysUser> $users */
+        $users = $query->orderBy('id', 'desc')->get();
+        return $users->map(fn(SysUser $u) => [
             'id'          => $u->id,
             'username'    => $u->username,
             'nickname'    => $u->nickname,

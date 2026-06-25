@@ -18,6 +18,24 @@ use support\Model;
  * 设计约定：
  *  - 业务规则不应直接写在 Model 里（避免 ActiveRecord 反模式），优先放 Service
  *  - Model 中只放纯字段访问、范围查询、关联关系、简单的派生属性
+ *
+ * @property int                    $id
+ * @property \DateTimeInterface|string|null $created_at
+ * @property \DateTimeInterface|string|null $updated_at
+ * @property string|null            $deleted_at
+ * @property int|null               $created_by
+ * @property int|null               $updated_by
+ *
+ * @method static static|null        find($id, $columns = [])
+ * @method static static|null        first($columns = [])
+ * @method static static             findOrFail($id, $columns = [])
+ * @method static static             firstOrFail($columns = [])
+ * @method static static             create(array $attributes = [])
+ * @method static static             forceCreate(array $attributes)
+ * @method static static             firstOrCreate(array $attributes, array $values = [])
+ * @method static static             updateOrCreate(array $attributes, array $values = [])
+ * @method static static|null        firstWhere($column, $operator = null, $value = null, $boolean = 'and')
+ * @method static \Illuminate\Database\Eloquent\Collection<int,static> get($columns = [])
  */
 abstract class BaseModel extends Model
 {
@@ -29,7 +47,7 @@ abstract class BaseModel extends Model
      *
      * @param array<string,mixed>           $where 精确条件（值为 ''/null 时跳过）
      * @param array{0:string,1:string}      $order 排序规则 [field, direction]
-     * @return array{list:Collection,total:int,page:int,limit:int,total_pages:int}
+     * @return array{list:\Illuminate\Database\Eloquent\Collection<int,static>,total:int,page:int,limit:int,total_pages:int}
      */
     public static function getPageList(
         array $where = [],
@@ -53,6 +71,7 @@ abstract class BaseModel extends Model
         $totalPages = max(1, (int) ceil($total / max(1, $limit)));
         $page       = max(1, min($page, $totalPages));
 
+        /** @var \Illuminate\Database\Eloquent\Collection<int,static> $list */
         $list = $query->offset(($page - 1) * $limit)->limit($limit)->get();
 
         return [

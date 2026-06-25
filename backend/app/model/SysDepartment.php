@@ -15,6 +15,20 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  *  - parent_id 自关联实现无限层级
  *  - id = 1 为根部门（不可删除）
  *  - 删除前需保证无子部门、无关联用户
+ *
+ * @property int                  $parent_id
+ * @property string               $name
+ * @property string|null          $leader
+ * @property string|null          $mobile
+ * @property string|null          $email
+ * @property int                  $sort
+ * @property int                  $status
+ * @property string|null          $remark
+ * @property-read string          $status_text
+ * @property-read \app\model\SysDepartment|null $parent
+ * @property-read \Illuminate\Database\Eloquent\Collection<int,\app\model\SysDepartment> $children
+ * @property-read \Illuminate\Database\Eloquent\Collection<int,\app\model\SysUser> $users
+ * @property-write int|null $user_count
  */
 class SysDepartment extends BaseModel
 {
@@ -62,9 +76,14 @@ class SysDepartment extends BaseModel
         return $this->belongsTo(self::class, 'parent_id');
     }
 
+    /**
+     * @return HasMany<static,static>
+     */
     public function children(): HasMany
     {
-        return $this->hasMany(self::class, 'parent_id')->orderBy('sort', 'asc');
+        /** @var HasMany<static,static> $relation */
+        $relation = $this->hasMany(self::class, 'parent_id')->orderBy('sort', 'asc');
+        return $relation;
     }
 
     public function users(): HasMany

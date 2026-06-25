@@ -8,13 +8,16 @@ namespace app\model;
  * 表：sys_role_menu
  *
  * 仅作为多对多中间表，不维护时间戳。
+ *
+ * @property int                  $role_id
+ * @property int                  $menu_id
  */
 class SysRoleMenu extends BaseModel
 {
     protected $table   = 'sys_role_menu';
     public    $timestamps = false;
 
-    /** @var string[] */
+    /** @var array<int,string> */
     protected $fillable = ['role_id', 'menu_id'];
 
     /**

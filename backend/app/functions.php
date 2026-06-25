@@ -36,6 +36,23 @@ Collection::macro('toTree', function () {
     return $tree;
 });
 
+// 同时注册到 Eloquent Collection，让 PHPStan 在分析 Eloquent 查询结果时也能识别
+\Illuminate\Database\Eloquent\Collection::macro('toTree', function () {
+    $items = $this->keyBy('id')->toArray();
+    $tree = [];
+
+    foreach ($items as $id => &$item) {
+        $parentId = (int) ($item['parent_id'] ?? 0);
+        if ($parentId > 0 && isset($items[$parentId])) {
+            $items[$parentId]['children'][] = &$item;
+        } else {
+            $tree[] = &$item;
+        }
+    }
+
+    return $tree;
+});
+
 // -----------------------------------------------------------------------------
 // 安全 / 通用工具
 // -----------------------------------------------------------------------------
