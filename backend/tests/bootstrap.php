@@ -36,3 +36,37 @@ foreach ((array) config('autoload.files', []) as $file) {
         require_once $file;
     }
 }
+
+// 测试环境：用 SQLite 临时文件数据库覆盖项目默认的 MySQL，
+// 避免依赖真实 MySQL 连接。让 webman Initializer 重新 init 为 SQLite。
+if (!function_exists('__test_setup_sqlite_db')) {
+    function __test_setup_sqlite_db(): void
+    {
+        if (!class_exists(\Webman\Database\Initializer::class)) {
+            return;
+        }
+        $dbFile = tempnam(sys_get_temp_dir(), 'phpunit_test_');
+        // 触发文件创建
+        $pdo = new \PDO('sqlite:' . $dbFile);
+        unset($pdo);
+
+        // 重置 Initializer 的 initialized 标记
+        $ref = new \ReflectionClass(\Webman\Database\Initializer::class);
+        $prop = $ref->getProperty('initialized');
+        $prop->setAccessible(true);
+        $prop->setValue(null, false);
+
+        // 重新初始化为 SQLite
+        \Webman\Database\Initializer::init([
+            'default'     => 'sqlite',
+            'connections' => [
+                'sqlite' => [
+                    'driver'   => 'sqlite',
+                    'database' => $dbFile,
+                    'prefix'   => '',
+                ],
+            ],
+        ]);
+    }
+    __test_setup_sqlite_db();
+}

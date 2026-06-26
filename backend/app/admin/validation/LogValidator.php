@@ -9,7 +9,7 @@ class LogValidator extends BaseValidator
 {
     protected array $rules = [
         'id'         => 'integer|min:1',
-        'ids'        => 'array',
+        'ids'        => 'required|array',
         'ids.*'      => 'integer|min:1',
         'days'       => 'integer|min:1|max:365',
         'keyword'    => 'string|max:100',

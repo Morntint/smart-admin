@@ -84,7 +84,7 @@ class LogController extends BaseController
     #[Validate(validator: LogValidator::class, scene: 'batchDelete')]
     public function operationBatchDelete(Request $request): Response
     {
-        $count = $this->logService->operationBatchDelete((array) $request->post('ids', []));
+        $count = $this->logService->operationBatchDelete((array) $request->input('ids', []));
         return $this->success(['count' => $count], '删除成功');
     }
 
@@ -96,7 +96,7 @@ class LogController extends BaseController
     #[Validate(validator: LogValidator::class, scene: 'clear')]
     public function operationClear(Request $request): Response
     {
-        $count = $this->logService->operationClear((int) $request->post('days', 30));
+        $count = $this->logService->operationClear((int) $request->input('days', 30));
         return $this->success(['count' => $count], '清理成功');
     }
 
@@ -162,7 +162,7 @@ class LogController extends BaseController
     #[Validate(validator: LogValidator::class, scene: 'clear')]
     public function loginClear(Request $request): Response
     {
-        $count = $this->logService->loginClear((int) $request->post('days', 90));
+        $count = $this->logService->loginClear((int) $request->input('days', 90));
         return $this->success(['count' => $count], '清理成功');
     }
 
@@ -185,7 +185,7 @@ class LogController extends BaseController
     #[Validate(validator: LogValidator::class, scene: 'batchDelete')]
     public function loginBatchDelete(Request $request): Response
     {
-        $count = $this->logService->loginBatchDelete((array) $request->post('ids', []));
+        $count = $this->logService->loginBatchDelete((array) $request->input('ids', []));
         return $this->success(['count' => $count], '删除成功');
     }
 }
