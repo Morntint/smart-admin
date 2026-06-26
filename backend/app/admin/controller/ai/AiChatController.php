@@ -3,9 +3,8 @@
 namespace app\admin\controller\ai;
 
 use app\admin\controller\BaseController;
+use app\admin\service\ai\AiAgentService;
 use app\admin\service\ai\AiConversationService;
-use app\model\AiAgent;
-use app\model\AiTool;
 use support\Log;
 use support\annotation\route\Delete;
 use support\annotation\route\DisableDefaultRoute;
@@ -25,11 +24,13 @@ use support\Response;
 class AiChatController extends BaseController
 {
     private AiConversationService $service;
+    private AiAgentService $agentService;
 
     public function __construct()
     {
         parent::__construct();
         $this->service = AiConversationService::getInstance();
+        $this->agentService = AiAgentService::getInstance();
     }
 
     /**
@@ -111,30 +112,10 @@ class AiChatController extends BaseController
      * 获取 Agent 可用的工具列表（供用户选择）
      */
     #[Get('/ai/chat/agents/{id}/tools')]
+    #[RequiresPermission('ai:agent:list')]
     public function getAgentTools(Request $request, int $id): Response
     {
-        /** @var AiAgent|null $agent */
-        $agent = \app\model\AiAgent::with(['tools'])
-            ->where('id', $id)
-            ->where('status', 1)
-            ->first();
-
-        if (!$agent) {
-            return $this->error('Agent 不存在或已禁用');
-        }
-
-        $tools = $agent->tools->map(function ($tool) {
-            /** @var AiTool $tool */
-            return [
-                'id'          => $tool->id,
-                'name'        => $tool->name,
-                'code'        => $tool->code,
-                'description' => $tool->description,
-                'icon'        => $tool->icon ?? null,
-            ];
-        })->toArray();
-
-        return $this->success($tools);
+        return $this->success($this->agentService->getAgentTools($id));
     }
 
     /**

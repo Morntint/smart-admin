@@ -141,4 +141,30 @@ class AiAgentService extends BaseService
         }
         return $agent->toArray();
     }
+
+    /**
+     * 获取 Agent 可用的工具列表（供用户选择）
+     *
+     * @param int $agentId
+     * @return array<int,array{id:int,name:string,code:string,description:string,icon:string|null}>
+     */
+    public function getAgentTools(int $agentId): array
+    {
+        /** @var AiAgent $agent */
+        $agent = $this->findOrFail($agentId, ['tools']);
+        if ($agent->status !== 1) {
+            throw new BusinessException('Agent 已禁用');
+        }
+
+        return $agent->tools->map(function ($tool) {
+            /** @var AiTool $tool */
+            return [
+                'id'          => $tool->id,
+                'name'        => $tool->name,
+                'code'        => $tool->code,
+                'description' => $tool->description,
+                'icon'        => $tool->icon ?? null,
+            ];
+        })->toArray();
+    }
 }
