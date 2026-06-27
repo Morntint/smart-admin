@@ -56,7 +56,13 @@ class AuthMiddleware implements MiddlewareInterface
         // 2. Token 解析
         $payload = $this->parseToken($request);
         if ($payload === null) {
-            throw new UnauthorizedException('请先登录');
+            // 2.1 SSE 专用 ticket 通道（一次性、5 秒过期），仅接受 POST /ai/chat/stream 这类显式 SSE 路径
+            $userId = $this->resolveTicket($request);
+            if ($userId > 0) {
+                $payload = ['user_id' => $userId, 'tv' => null];
+            } else {
+                throw new UnauthorizedException('请先登录');
+            }
         }
 
         // 3. 用户状态校验
@@ -66,7 +72,8 @@ class AuthMiddleware implements MiddlewareInterface
         }
 
         // 3.1 Token 版本校验：改密/重置/禁用/登出会自增 token_version 使旧 Token 失效
-        if ((int) ($payload['tv'] ?? 0) !== (int) ($user['token_version'] ?? 0)) {
+        //     ticket 通道由签发时校验过用户态，tv === null 时跳过校验
+        if ($payload['tv'] !== null && (int) ($payload['tv']) !== (int) ($user['token_version'] ?? 0)) {
             throw new UnauthorizedException('登录状态已失效，请重新登录');
         }
 
@@ -103,7 +110,7 @@ class AuthMiddleware implements MiddlewareInterface
     }
 
     /**
-     * 从 Authorization 头或 ?token= 查询参数中提取 Token。
+     * 从 Authorization 头中提取 Token（不再接受 ?token= 查询参数，避免 URL 中携带长期凭证）。
      */
     private function extractToken(Request $request): ?string
     {
@@ -112,8 +119,45 @@ class AuthMiddleware implements MiddlewareInterface
             $token = substr($auth, 7);
             return $token !== '' ? $token : null;
         }
-        $token = (string) $request->get('token', '');
-        return $token !== '' ? $token : null;
+        return null;
+    }
+
+    /**
+     * 校验并消费 SSE 一次性 ticket。
+     *
+     *  - 仅允许显式 SSE 路径使用（避免普通接口也接受 URL 鉴权）
+     *  - 命中后立刻删除缓存键，保证"一次性"
+     *  - 校验通过返回 user_id，否则 0
+     */
+    private function resolveTicket(Request $request): int
+    {
+        $ticket = (string) $request->get('ticket', '');
+        if ($ticket === '' || !$this->isSseStreamPath($request->path())) {
+            return 0;
+        }
+
+        $key   = 'sse_ticket:' . $ticket;
+        $value = cache($key);
+        if (!is_numeric($value)) {
+            return 0;
+        }
+        // 消费即销毁，防重放
+        try {
+            cache()->delete($key);
+        } catch (\Throwable) {
+        }
+        return (int) $value;
+    }
+
+    /** 允许通过 SSE ticket 鉴权的路径白名单（按需扩展） */
+    private const SSE_STREAM_PATHS = [
+        '/admin/ai/chat/stream',
+    ];
+
+    private function isSseStreamPath(string $path): bool
+    {
+        $path = '/' . ltrim($path, '/');
+        return in_array($path, self::SSE_STREAM_PATHS, true);
     }
 
     /**

@@ -160,11 +160,17 @@
       </div>
     </div>
 
+    <!-- 置顶公告滚动通知 -->
+    <ArtAnnouncementBar ref="announcementBar" />
+
     <!-- 标签页 -->
     <ArtWorkTab />
 
     <!-- 通知 -->
     <ArtNotification v-model:value="showNotice" ref="notice" />
+
+    <!-- 公告强提示弹窗 -->
+    <ArtAnnouncementPopup ref="announcementPopup" />
   </div>
 </template>
 
@@ -183,6 +189,8 @@
   import { useCommon } from '@/hooks/core/useCommon'
   import { useHeaderBar } from '@/hooks/core/useHeaderBar'
   import ArtUserMenu from './widget/ArtUserMenu.vue'
+  import ArtAnnouncementPopup from '@/components/core/widget/art-announcement-popup/index.vue'
+  import ArtAnnouncementBar from '@/components/core/widget/art-announcement-bar/index.vue'
 
   defineOptions({ name: 'ArtHeaderBar' })
 
@@ -222,6 +230,10 @@
   const showNotice = ref(false)
   const notice = ref(null)
 
+  // 公告组件引用
+  const announcementPopup = ref<InstanceType<typeof ArtAnnouncementPopup> | null>(null)
+  const announcementBar = ref<InstanceType<typeof ArtAnnouncementBar> | null>(null)
+
   // 菜单类型判断
   const isLeftMenu = computed(() => menuType.value === MenuTypeEnum.LEFT)
   const isDualMenu = computed(() => menuType.value === MenuTypeEnum.DUAL_MENU)
@@ -233,10 +245,32 @@
   onMounted(() => {
     initLanguage()
     document.addEventListener('click', bodyCloseNotice)
+
+    // 监听登录成功事件，检查并显示公告弹窗
+    mittBus.on('login:success', () => {
+      nextTick(() => {
+        // 延迟一点，确保页面跳转完成
+        setTimeout(() => {
+          announcementPopup.value?.checkAndShowPopup()
+          announcementBar.value?.loadTopAnnouncements()
+        }, 500)
+      })
+    })
+
+    // 如果用户已经登录（刷新页面），也检查一次
+    if (userStore.isLogin) {
+      nextTick(() => {
+        setTimeout(() => {
+          announcementPopup.value?.checkAndShowPopup()
+          announcementBar.value?.loadTopAnnouncements()
+        }, 300)
+      })
+    }
   })
 
   onUnmounted(() => {
     document.removeEventListener('click', bodyCloseNotice)
+    mittBus.off('login:success')
   })
 
   /**

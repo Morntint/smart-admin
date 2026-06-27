@@ -130,6 +130,10 @@ class ConfigService extends BaseService
     /**
      * 批量更新配置（按 key => value）。
      *
+     * 事务保证：任一条 update 抛错则整批回滚，避免出现「前半 key 已写入、后半失败」
+     * 导致前端读到半截配置。clearCache 放到事务外 commit 之后，避免提前清空让其它
+     * worker 重新加载了旧值。
+     *
      * @param array<string,mixed> $configs
      */
     public function batchUpdate(array $configs, int $operatorId): int
@@ -138,14 +142,17 @@ class ConfigService extends BaseService
             return 0;
         }
         $now      = $this->now();
-        $affected = 0;
-        foreach ($configs as $key => $value) {
-            $affected += SysConfig::where('key', $key)->update([
-                'value'      => $value,
-                'updated_by' => $operatorId,
-                'updated_at' => $now,
-            ]);
-        }
+        $affected = $this->transaction(function () use ($configs, $operatorId, $now): int {
+            $count = 0;
+            foreach ($configs as $key => $value) {
+                $count += SysConfig::where('key', $key)->update([
+                    'value'      => $value,
+                    'updated_by' => $operatorId,
+                    'updated_at' => $now,
+                ]);
+            }
+            return $count;
+        });
         SysConfig::clearCache();
         return $affected;
     }

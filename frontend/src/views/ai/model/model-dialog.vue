@@ -30,29 +30,63 @@
         <ElInput v-model="form.base_url" placeholder="留空使用官方默认地址" />
       </ElFormItem>
       <ElFormItem label="API Key" prop="api_key">
-        <ElInput v-model="form.api_key" type="password" show-password placeholder="sk-..." />
+        <ElInput
+          v-model="form.api_key"
+          type="password"
+          show-password
+          :placeholder="apiKeyPlaceholder"
+        />
+        <div v-if="isEdit" class="form-tip"
+          >留空表示保持原 API Key 不变；后端已加密存储，列表/详情接口不会回显明文</div
+        >
       </ElFormItem>
       <ElRow :gutter="16">
         <ElCol :span="12">
           <ElFormItem label="上下文窗口">
-            <ElInputNumber v-model="form.context_window" :min="1024" :max="1000000" :step="1000" class="w-full" />
+            <ElInputNumber
+              v-model="form.context_window"
+              :min="1024"
+              :max="1000000"
+              :step="1000"
+              class="w-full"
+            />
           </ElFormItem>
         </ElCol>
         <ElCol :span="12">
           <ElFormItem label="最大 Token">
-            <ElInputNumber v-model="form.max_tokens" :min="256" :max="128000" :step="1024" class="w-full" />
+            <ElInputNumber
+              v-model="form.max_tokens"
+              :min="256"
+              :max="128000"
+              :step="1024"
+              class="w-full"
+            />
           </ElFormItem>
         </ElCol>
       </ElRow>
       <ElRow :gutter="16">
         <ElCol :span="8">
           <ElFormItem label="温度">
-            <ElInputNumber v-model="form.temperature" :min="0" :max="2" :step="0.1" :precision="2" class="w-full" />
+            <ElInputNumber
+              v-model="form.temperature"
+              :min="0"
+              :max="2"
+              :step="0.1"
+              :precision="2"
+              class="w-full"
+            />
           </ElFormItem>
         </ElCol>
         <ElCol :span="8">
           <ElFormItem label="Top P">
-            <ElInputNumber v-model="form.top_p" :min="0" :max="1" :step="0.05" :precision="2" class="w-full" />
+            <ElInputNumber
+              v-model="form.top_p"
+              :min="0"
+              :max="1"
+              :step="0.05"
+              :precision="2"
+              class="w-full"
+            />
           </ElFormItem>
         </ElCol>
         <ElCol :span="8">
@@ -62,9 +96,15 @@
         </ElCol>
       </ElRow>
       <ElFormItem label="功能支持">
-        <ElCheckbox v-model="form.supports_vision" :true-value="1" :false-value="0">视觉</ElCheckbox>
-        <ElCheckbox v-model="form.supports_function_calling" :true-value="1" :false-value="0">函数调用</ElCheckbox>
-        <ElCheckbox v-model="form.supports_streaming" :true-value="1" :false-value="0">流式输出</ElCheckbox>
+        <ElCheckbox v-model="form.supports_vision" :true-value="1" :false-value="0"
+          >视觉</ElCheckbox
+        >
+        <ElCheckbox v-model="form.supports_function_calling" :true-value="1" :false-value="0"
+          >函数调用</ElCheckbox
+        >
+        <ElCheckbox v-model="form.supports_streaming" :true-value="1" :false-value="0"
+          >流式输出</ElCheckbox
+        >
       </ElFormItem>
       <ElFormItem label="状态">
         <ElRadioGroup v-model="form.status">
@@ -107,6 +147,9 @@
 
   const isEdit = computed(() => props.type === 'edit')
 
+  // 编辑模式下不展示后端回显的脱敏占位（避免被用户原样提交导致原 key 被覆盖）
+  const apiKeyPlaceholder = computed(() => (isEdit.value ? '留空保持原 API Key 不变' : 'sk-...'))
+
   const formRef = ref()
   const submitting = ref(false)
 
@@ -144,6 +187,9 @@
         try {
           const res: any = await fetchGetAiModel(data.id)
           Object.assign(form, res)
+          // 后端返回的 api_key 是脱敏占位（如 sk-12****ef34），不可作为有效新值回传，
+          // 一律清空让用户决定"不输入就保持不变 / 输入就替换"。
+          form.api_key = ''
         } catch {
           // handled
         }

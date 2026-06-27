@@ -1,0 +1,37 @@
+// AI 聊天侧边栏专用样式
+.ai-chat-drawer.el-drawer {
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.ai-chat-drawer.el-drawer .el-drawer__header {
+  display: none;
+}
+
+.ai-chat-drawer.el-drawer .el-drawer__body {
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+}
+
+// 聊天内容容器 - 处理间距和圆角
+.chat-wrapper {
+  padding: 0 12px 12px;
+  height: 100vh;
+  box-sizing: border-box;
+  padding-top: 70px;
+}
+
+@media (max-width: 640px) {
+  .chat-wrapper {
+    padding: 0;
+    height: 100vh;
+  }
+}
+
+// 隐藏遮罩
+html body .el-overlay.el-drawer__mask {
+  display: none !important;
+  background: transparent !important;
+}

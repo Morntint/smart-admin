@@ -36,7 +36,15 @@ class AiChatSendTest extends TestCase
     {
         $conn = self::conn();
         // 清空数据
-        foreach (['ai_conversation_message', 'ai_conversation', 'ai_usage_record', 'ai_agent_tool', 'ai_agent', 'ai_model'] as $t) {
+        foreach ([
+            'ai_conversation_message',
+            'ai_conversation',
+            'ai_usage_record',
+            'ai_agent_tool_relation',
+            'ai_tool',
+            'ai_agent',
+            'ai_model',
+        ] as $t) {
             $conn->statement("DELETE FROM {$t}");
         }
         FakeAiGateway::reset();
@@ -370,13 +378,30 @@ class AiChatSendTest extends TestCase
         SQL);
 
         $c->statement(<<<'SQL'
-            CREATE TABLE IF NOT EXISTS ai_agent_tool (
+            CREATE TABLE IF NOT EXISTS ai_tool (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name VARCHAR(100) NOT NULL,
+                code VARCHAR(100) NOT NULL UNIQUE,
+                description TEXT,
+                tool_type VARCHAR(20) DEFAULT 'function',
+                parameters_schema TEXT,
+                handler VARCHAR(255),
+                config TEXT,
+                status INT DEFAULT 1,
+                sort INT DEFAULT 0,
+                created_by INT,
+                updated_by INT,
+                created_at DATETIME,
+                updated_at DATETIME
+            )
+        SQL);
+
+        $c->statement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS ai_agent_tool_relation (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 agent_id INT NOT NULL,
-                tool_code VARCHAR(100),
-                tool_name VARCHAR(200),
-                tool_config TEXT,
-                sort INT DEFAULT 0,
+                tool_id INT NOT NULL,
+                config TEXT,
                 created_at DATETIME,
                 updated_at DATETIME
             )
@@ -391,6 +416,7 @@ class AiChatSendTest extends TestCase
                 round_count INT DEFAULT 0,
                 total_tokens INT DEFAULT 0,
                 total_cost REAL DEFAULT 0,
+                selected_tool_ids TEXT,
                 status INT DEFAULT 1,
                 created_at DATETIME,
                 updated_at DATETIME
@@ -405,6 +431,8 @@ class AiChatSendTest extends TestCase
                 role VARCHAR(20) NOT NULL,
                 content TEXT,
                 tool_calls TEXT,
+                tool_call_id VARCHAR(100),
+                name VARCHAR(100),
                 token_usage TEXT,
                 cost REAL DEFAULT 0,
                 duration INT DEFAULT 0,

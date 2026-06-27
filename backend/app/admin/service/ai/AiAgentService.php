@@ -74,10 +74,10 @@ class AiAgentService extends BaseService
 
             // 绑定工具（多对多）：支持 [1, 2, 3] 或 [{id: 1}] 两种格式
             if (!empty($toolIds)) {
-                $ids = array_map(function ($item) {
-                    return is_array($item) ? $item['id'] ?? $item[0] ?? $item : $item;
-                }, $toolIds);
-                $agent->tools()->attach($ids);
+                $ids = $this->normalizeToolIds($toolIds);
+                if ($ids !== []) {
+                    $agent->tools()->sync($ids);
+                }
             }
 
             return $agent;
@@ -102,9 +102,7 @@ class AiAgentService extends BaseService
 
             // 重新绑定工具（如果传了 tools 才更新）：支持 [1, 2, 3] 或 [{id: 1}] 两种格式
             if ($toolIds !== null) {
-                $ids = array_map(function ($item) {
-                    return is_array($item) ? $item['id'] ?? $item[0] ?? $item : $item;
-                }, $toolIds);
+                $ids = $this->normalizeToolIds($toolIds);
                 $agent->tools()->sync($ids);
             }
 
@@ -166,5 +164,53 @@ class AiAgentService extends BaseService
                 'icon'        => $tool->icon ?? null,
             ];
         })->toArray();
+    }
+
+    /**
+     * 获取 Agent 绑定的工具 ID 列表（用于会话/请求里所选工具的合法性校验）。
+     *
+     * @return int[]
+     */
+    public function getAgentToolIds(int $agentId): array
+    {
+        /** @var AiAgent $agent */
+        $agent = $this->findOrFail($agentId, ['tools:id']);
+        return $agent->tools->pluck('id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    /**
+     * 把外部传入的 tool 列表规整成纯 int ID 数组：
+     *  - 支持 [1, 2, 3] / [{id: 1}, {id: 2}] / [[1], [2]] 三种格式
+     *  - 去重；丢弃 0、负数、非数字
+     *  - 与 DB 对账丢弃不存在的 ID（避免外键脏数据）
+     *
+     * @param mixed[] $rawItems
+     * @return int[]
+     */
+    private function normalizeToolIds(array $rawItems): array
+    {
+        $ids = [];
+        foreach ($rawItems as $item) {
+            if (is_array($item)) {
+                $val = $item['id'] ?? $item[0] ?? null;
+            } else {
+                $val = $item;
+            }
+            $id = (int) $val;
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+        $ids = array_values(array_unique($ids));
+        if ($ids === []) {
+            return [];
+        }
+
+        // 与 DB 对账：只保留存在且状态正常的 tool
+        return AiTool::whereIn('id', $ids)
+            ->where('status', 1)
+            ->pluck('id')
+            ->map(fn ($v) => (int) $v)
+            ->all();
     }
 }

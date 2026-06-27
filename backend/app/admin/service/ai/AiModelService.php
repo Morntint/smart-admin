@@ -56,7 +56,7 @@ class AiModelService extends BaseService
     public function create(array $data, int $userId): AiModel
     {
         $this->assertUnique('name', $data['name']);
-        // TODO: 加密存储 API Key
+        // api_key 通过 AiModel::apiKey() accessor 自动加密入库（{@see app\common\support\Crypto}）
         $data['api_key']     = $data['api_key'] ?? '';
         $data['created_by']  = $userId;
         $data['updated_by']  = $userId;

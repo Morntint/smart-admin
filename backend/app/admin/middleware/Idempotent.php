@@ -33,6 +33,14 @@ class Idempotent implements MiddlewareInterface
     /** 幂等键前缀 */
     private const PREFIX = 'idempotent:';
 
+    /**
+     * acquire 的三态结果，替代旧的 true|false|null 语义。
+     * 用具名常量比靠注释维系更不容易被后人改坏。
+     */
+    private const ACQUIRE_OK         = 'ok';         // 抢到锁，放行
+    private const ACQUIRE_CONFLICT   = 'conflict';   // 已有重复请求，拒绝（409）
+    private const ACQUIRE_FAIL_OPEN  = 'fail_open';  // Redis 故障，幂等组件自身故障不阻断业务
+
     public function process(Request $request, callable $handler): Response
     {
         $rule = $this->resolveRule($request);
@@ -40,30 +48,33 @@ class Idempotent implements MiddlewareInterface
             return $handler($request);
         }
 
-        $key      = self::PREFIX . $this->buildFingerprint($request, $rule);
-        $acquired = $this->acquire($key, $rule->window);
+        $key    = self::PREFIX . $this->buildFingerprint($request, $rule);
+        $result = $this->acquire($key, $rule->window);
 
-        // acquire 返回 null 表示 Redis 故障 → fail-open 放行
-        if ($acquired === false) {
+        if ($result === self::ACQUIRE_CONFLICT) {
             throw new BusinessException($rule->message, ResponseCode::CONFLICT);
         }
 
+        // ACQUIRE_OK / ACQUIRE_FAIL_OPEN 均放行
         return $handler($request);
     }
 
     /**
      * 抢占幂等键。
      *
-     * @return bool|null true=抢到（放行）；false=已存在（重复）；null=Redis 故障（放行）
+     * 用 SET NX EX 原子写：键存在 → 重复请求；不存在 → 抢占成功。
+     * Redis 故障时 fail-open（返回 FAIL_OPEN），让幂等组件自身故障不阻断业务，
+     * 但调用方据此可以记 warning。
+     *
+     * @return self::ACQUIRE_*
      */
-    private function acquire(string $key, int $window): ?bool
+    private function acquire(string $key, int $window): string
     {
         try {
-            // SET key 1 EX window NX：不存在才写入并设过期，原子操作
             $ok = Redis::set($key, '1', 'EX', max(1, $window), 'NX');
-            return (bool) $ok;
+            return $ok ? self::ACQUIRE_OK : self::ACQUIRE_CONFLICT;
         } catch (Throwable) {
-            return null;
+            return self::ACQUIRE_FAIL_OPEN;
         }
     }
 

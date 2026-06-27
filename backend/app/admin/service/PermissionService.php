@@ -3,6 +3,8 @@
 namespace app\admin\service;
 
 use app\admin\service\interface\PermissionServiceInterface;
+use app\model\SysMenu;
+use app\model\SysRole;
 use app\model\SysUser;
 
 /**
@@ -59,6 +61,10 @@ class PermissionService implements PermissionServiceInterface
     /**
      * 获取用户所有权限标识（带缓存）。
      *
+     * 过滤规则：
+     *  - 仅取「正常」状态的角色（与 {@see DataScopeService} 行为对齐）
+     *  - 仅取「正常」状态的菜单：禁用菜单上挂的权限标识立即失效，避免缓存窗口期"被禁用的菜单仍可访问"
+     *
      * @return string[]
      */
     public function getPermissions(int $userId): array
@@ -75,7 +81,12 @@ class PermissionService implements PermissionServiceInterface
         }
 
         /** @var \Illuminate\Database\Eloquent\Collection<int,\app\model\SysRole> $roles */
-        $roles = $user->roles()->with('menus')->get();
+        $roles = $user->roles()
+            ->where('sys_role.status', SysRole::STATUS_NORMAL)
+            ->with(['menus' => function ($q) {
+                $q->where('sys_menu.status', SysMenu::STATUS_NORMAL);
+            }])
+            ->get();
         $permissions = $roles
             ->flatMap(fn(\app\model\SysRole $role) => $role->menus->pluck('permission'))
             ->filter()
@@ -89,6 +100,8 @@ class PermissionService implements PermissionServiceInterface
 
     /**
      * 获取用户角色 code 列表（带缓存）。
+     *
+     * 仅取「正常」状态角色 —— 角色禁用后立即失去 super_admin 等特权。
      *
      * @return string[]
      */
@@ -105,9 +118,54 @@ class PermissionService implements PermissionServiceInterface
             return [];
         }
 
-        $codes = $user->roles()->pluck('code')->toArray();
+        $codes = $user->roles()
+            ->where('sys_role.status', SysRole::STATUS_NORMAL)
+            ->pluck('code')
+            ->toArray();
         cache([$cacheKey => $codes], self::PERM_CACHE_TTL);
         return $codes;
+    }
+
+    /**
+     * 获取用户可见的菜单 ID 列表（带缓存）。
+     *
+     * 复用与 {@see self::getPermissions()} 同一份 roles+menus 查询的语义；
+     * 旧代码在 MenuService::userMenuIds() 单独再查一遍 roles + with('menus') 是 N+1。
+     * 这里走独立缓存（key: user_menu_ids_{uid}）但同 TTL，由 clearCache 一并失效。
+     *
+     * @return int[]
+     */
+    public function getMenuIds(int $userId): array
+    {
+        $cacheKey = $this->menuKey($userId);
+        $cached   = cache($cacheKey);
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $user = SysUser::find($userId);
+        if (!$user) {
+            return [];
+        }
+
+        /** @var \Illuminate\Database\Eloquent\Collection<int,SysRole> $roles */
+        $roles = $user->roles()
+            ->where('sys_role.status', SysRole::STATUS_NORMAL)
+            ->with(['menus:id,status'])
+            ->get();
+
+        $menuIds = $roles
+            ->flatMap(fn (SysRole $role) => $role->menus
+                ->where('status', SysMenu::STATUS_NORMAL)
+                ->pluck('id')
+            )
+            ->unique()
+            ->map(fn ($v) => (int) $v)
+            ->values()
+            ->all();
+
+        cache([$cacheKey => $menuIds], self::PERM_CACHE_TTL);
+        return $menuIds;
     }
 
     /**
@@ -118,6 +176,7 @@ class PermissionService implements PermissionServiceInterface
         cache()->delete(
             $this->permKey($userId),
             $this->roleKey($userId),
+            $this->menuKey($userId),
             "auth_user_{$userId}"
         );
 
@@ -133,5 +192,10 @@ class PermissionService implements PermissionServiceInterface
     private function roleKey(int $userId): string
     {
         return "user_role_codes_{$userId}";
+    }
+
+    private function menuKey(int $userId): string
+    {
+        return "user_menu_ids_{$userId}";
     }
 }

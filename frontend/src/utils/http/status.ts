@@ -9,6 +9,8 @@ export enum ApiStatus {
   notFound = 404, // 未找到
   methodNotAllowed = 405, // 方法不允许
   requestTimeout = 408, // 请求超时
+  conflict = 409, // 冲突（幂等中间件命中、唯一约束冲突）
+  tooManyRequests = 429, // 限流
   internalServerError = 500, // 服务器错误
   notImplemented = 501, // 未实现
   badGateway = 502, // 网关错误

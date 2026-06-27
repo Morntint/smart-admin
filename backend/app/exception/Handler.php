@@ -77,16 +77,16 @@ class Handler extends SupportHandler
      */
     public function render(Request $request, Throwable $exception): Response
     {
-        // 调试模式：返回完整堆栈，便于定位问题
+        // 调试模式：返回可读堆栈，但不暴露服务器绝对路径（用 trace id 替代 file/line）
         if (config('app.debug', false)) {
+            $requestId = TraceContext::id() ?: 'debug-request';
             return $this->jsonResponse(500, [
                 'code' => ResponseCode::SERVER_ERROR->value,
-                'msg'  => $exception->getMessage(),
+                'msg'  => $this->sanitizeMessage($exception->getMessage()),
+                'request_id' => $requestId,
                 'data' => [
                     'exception' => get_class($exception),
-                    'file'      => $exception->getFile(),
-                    'line'      => $exception->getLine(),
-                    'trace'     => explode("\n", $exception->getTraceAsString()),
+                    'trace'     => array_map('strval', array_slice(explode("\n", $exception->getTraceAsString()), 0, 20)),
                 ],
             ]);
         }
@@ -140,12 +140,28 @@ class Handler extends SupportHandler
     }
 
     /**
-     * 隐藏敏感错误信息（绝对路径、邮箱等）。
+     * 隐藏敏感错误信息（绝对路径、邮箱等），同时避免误伤合法 URL 和中文。
+     *
+     * 旧实现使用全局 `/\[a-zA-Z]:\\[^\s]+|\/[^\s]+/`，会把 `/上海`、`https://...` 中路径段
+     * 都误替换为 `[path]`。收敛到：仅替换以盘符或 `\app\` 开头的明显服务器绝对路径。
      */
     private function getErrorMessage(Throwable $e): string
     {
         $message = $e->getMessage() ?: '服务器内部错误';
-        $message = preg_replace('/[a-zA-Z]:\\\\[^\s]+|\/[^\s]+/', '[path]', $message) ?? $message;
+        $message = $this->sanitizeMessage($message);
+        return $message;
+    }
+
+    /**
+     * 脱敏消息中的路径与邮箱。
+     */
+    private function sanitizeMessage(string $message): string
+    {
+        // Windows 绝对路径：C:\path\to\... 或 D:\xxx
+        $message = preg_replace('/[a-zA-Z]:\\\\[^\\s,;:)\]>"\']+/', '[path]', $message) ?? $message;
+        // Unix 路径：/var/www/... 等以 / 开头且包含多个斜杠分段的路径
+        $message = preg_replace('#/([a-zA-Z0-9_-]+/){2,}[a-zA-Z0-9_. -]+#', '/[path]', $message) ?? $message;
+        // 邮箱
         $message = preg_replace('/\b[\w.-]+@[\w.-]+\.\w+\b/', '[email]', $message) ?? $message;
         return $message;
     }
@@ -160,7 +176,7 @@ class Handler extends SupportHandler
         return new Response(
             $httpStatus,
             ['Content-Type' => 'application/json; charset=utf-8'],
-            (string) json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+            (string) json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE)
         );
     }
 }

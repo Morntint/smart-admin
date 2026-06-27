@@ -140,6 +140,66 @@ export const systemRoutes: AppRouteRecord = {
       }
     },
     {
+      path: 'system-notice',
+      name: 'SystemNotice',
+      component: '/system/notice/system',
+      meta: {
+        title: 'menus.system.systemNotice',
+        icon: 'ri:mail-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN'],
+        isHide: true,
+        authList: [
+          { title: '查询', authMark: 'system:notice:list' },
+          { title: '发送', authMark: 'system:notice:add' },
+          { title: '编辑', authMark: 'system:notice:edit' },
+          { title: '删除', authMark: 'system:notice:del' },
+          { title: '标记已读', authMark: 'system:notice:read' }
+        ]
+      }
+    },
+    {
+      path: 'notice/inbox',
+      name: 'NoticeInbox',
+      component: '/system/notice/inbox',
+      meta: {
+        title: 'menus.system.noticeInbox',
+        icon: 'ri:mail-unread-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
+    },
+    {
+      path: 'system-announcement',
+      name: 'SystemAnnouncement',
+      component: '/system/notice/announcement',
+      meta: {
+        title: 'menus.system.systemAnnouncement',
+        icon: 'ri:volume-up-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN'],
+        isHide: true,
+        authList: [
+          { title: '查询', authMark: 'system:announcement:list' },
+          { title: '新增', authMark: 'system:announcement:add' },
+          { title: '编辑', authMark: 'system:announcement:edit' },
+          { title: '删除', authMark: 'system:announcement:del' },
+          { title: '发布', authMark: 'system:announcement:publish' }
+        ]
+      }
+    },
+    {
+      path: 'notice',
+      name: 'Notice',
+      component: '/system/notice/index',
+      meta: {
+        title: 'menus.system.notice',
+        icon: 'ri:notification-3-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
+    },
+    {
       path: 'nested',
       name: 'Nested',
       component: '',

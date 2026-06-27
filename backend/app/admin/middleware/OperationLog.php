@@ -34,6 +34,12 @@ class OperationLog implements MiddlewareInterface
     /** redis-queue 队列名，需与 OperationLogConsumer::$queue 一致 */
     private const QUEUE = 'operation_log';
 
+    /** 写入 sys_operation_log.result 字段的最大字符长度（防止导出类大响应灌爆表） */
+    private const MAX_RESULT_CHARS = 4096;
+
+    /** 写入 sys_operation_log.param 字段的最大字符长度 */
+    private const MAX_PARAM_CHARS = 4096;
+
     /** 不记录的请求路径前缀（登录、退出、刷新 token、文件上传、公开接口、日志） */
     private const SKIP_PATTERNS = [
         '/admin/login',
@@ -45,7 +51,7 @@ class OperationLog implements MiddlewareInterface
         '/admin/log/',
     ];
 
-    /** 敏感字段：写日志前清除 */
+    /** 敏感字段：写日志前清除（覆盖请求参数 + 响应体顶层 + result 内任意层级） */
     private const SENSITIVE_FIELDS = [
         'password',
         'old_password',
@@ -56,6 +62,19 @@ class OperationLog implements MiddlewareInterface
         'refresh_token',
         'captcha',
         'captcha_key',
+        // AI / 第三方密钥
+        'api_key',
+        'secret_key',
+        'access_key',
+        'access_key_id',
+        'access_key_secret',
+        'signature',
+        'private_key',
+        'app_secret',
+        'client_secret',
+        // 个人敏感
+        'id_card',
+        'bank_card',
     ];
 
     public function process(Request $request, callable $next): Response
@@ -135,9 +154,12 @@ class OperationLog implements MiddlewareInterface
         }
 
         $param = array_merge($request->post() ?: [], $request->get() ?: []);
-        foreach (self::SENSITIVE_FIELDS as $field) {
-            unset($param[$field]);
-        }
+        $param = self::scrubSensitive($param);
+        $body  = self::scrubSensitive($body);
+
+        // 截断超大字段，避免导出/列表接口把几百 KB 的响应灌进 sys_operation_log
+        $param = self::truncateForStorage($param, self::MAX_PARAM_CHARS);
+        $body  = self::truncateForStorage($body,  self::MAX_RESULT_CHARS);
 
         // 在请求上下文内组装整行（含 ip/user_agent/created_at），消费进程脱离请求也能直接落库
         $row = SysOperationLog::buildRow(
@@ -178,5 +200,52 @@ class OperationLog implements MiddlewareInterface
     {
         $parts = array_values(array_filter(explode('/', $path)));
         return $parts[1] ?? ($parts[0] ?? '');
+    }
+
+    /**
+     * 递归去除敏感字段：覆盖任意嵌套层级。
+     *
+     * 匹配规则：键名严格匹配 {@see self::SENSITIVE_FIELDS} 中任意一项（大小写不敏感）。
+     * 对应值会被替换为 "***"，而不是 unset —— 保留键便于排查"曾经传过该字段"。
+     *
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>
+     */
+    private static function scrubSensitive(array $data): array
+    {
+        $sensitive = array_flip(array_map('strtolower', self::SENSITIVE_FIELDS));
+        $walker = function (&$value, $key) use ($sensitive, &$walker): void {
+            if (is_string($key) && isset($sensitive[strtolower($key)])) {
+                $value = '***';
+                return;
+            }
+            if (is_array($value)) {
+                array_walk($value, $walker);
+            }
+        };
+        array_walk($data, $walker);
+        return $data;
+    }
+
+    /**
+     * 把存入 sys_operation_log 的字段做长度截断。
+     *
+     * 业务接口（如导出、列表）的 result 经常是几百 KB；若原样落库，会让 sys_operation_log 表迅速膨胀，
+     * 同时拖垮日志查询。这里走"序列化后看长度"的策略：超过阈值的转成 `{__truncated__: true, size, sample}`。
+     *
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>
+     */
+    private static function truncateForStorage(array $data, int $maxChars): array
+    {
+        $json = json_encode($data, JSON_UNESCAPED_UNICODE);
+        if ($json === false || strlen($json) <= $maxChars) {
+            return $data;
+        }
+        return [
+            '__truncated__' => true,
+            'size'          => strlen($json),
+            'sample'        => mb_substr($json, 0, $maxChars),
+        ];
     }
 }

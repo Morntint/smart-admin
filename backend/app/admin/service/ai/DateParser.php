@@ -11,6 +11,16 @@ namespace app\admin\service\ai;
 class DateParser
 {
     /**
+     * 允许的年份下界相对偏移：currentYear - LOWER_BOUND_YEARS_BACK_DEFAULT。
+     *
+     * 旧实现硬编码 `< 2024`：随时间推移会把越来越多合法历史日期吞掉。
+     * 现在改为相对偏移：5 年回溯窗口在业务日志场景下完全够用，
+     * 且这是个从未需要 per-env 调整的参数 —— 直接以常量提供单源真相，
+     * 不再走 config('ai.date_parser.*') 这层间接。
+     */
+    private const LOWER_BOUND_YEARS_BACK_DEFAULT = 5;
+
+    /**
      * 解析日期参数，支持相对日期
      *
      * @param string|null $date 日期字符串，支持：
@@ -25,13 +35,14 @@ class DateParser
             return '';
         }
 
+        $currentYear = (int) date('Y');
+        $minYear     = $currentYear - self::LOWER_BOUND_YEARS_BACK_DEFAULT;
+
         // 如果已经是 Y-m-d 格式，直接返回（但要做有效性检查）
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-            // 检查年份是否合理（AI 模型训练数据截止年份）
             $year = (int) substr($date, 0, 4);
-            $currentYear = (int) date('Y');
-            if ($year < 2024 || $year > $currentYear + 1) {
-                // 年份不合理，使用今天
+            if ($year < $minYear || $year > $currentYear + 1) {
+                // 年份不合理（早于下界 / 超过未来 1 年），保守使用今天
                 return date('Y-m-d');
             }
             // 检查日期是否在未来
@@ -96,10 +107,8 @@ class DateParser
                 $timestamp = strtotime($date);
                 if ($timestamp !== false) {
                     $parsed = date('Y-m-d', $timestamp);
-                    // 再次验证年份
                     $year = (int) substr($parsed, 0, 4);
-                    $currentYear = (int) date('Y');
-                    if ($year >= 2024 && $year <= $currentYear + 1) {
+                    if ($year >= $minYear && $year <= $currentYear + 1) {
                         return $parsed;
                     }
                 }

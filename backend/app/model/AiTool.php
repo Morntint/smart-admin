@@ -57,19 +57,4 @@ class AiTool extends BaseModel
             'agent_id'
         )->withTimestamps();
     }
-
-    /**
-     * 转换为 OpenAI Function Calling 格式
-     */
-    public function toOpenAiTool(): array
-    {
-        return [
-            'type'     => 'function',
-            'function' => [
-                'name'        => $this->code,
-                'description' => $this->description ?? '',
-                'parameters'  => $this->parameters_schema ?? (object) [],
-            ],
-        ];
-    }
 }

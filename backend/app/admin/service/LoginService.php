@@ -30,11 +30,14 @@ class LoginService extends BaseService
     /** 用户名格式（3-32 位字母/数字/下划线） */
     private const USERNAME_REGEX = '/^[a-zA-Z0-9_]{3,32}$/';
 
-    /** 账号连续登录失败锁定阈值（次） */
+    /** 账号+IP 连续登录失败锁定阈值（次） */
     private const MAX_LOGIN_FAILURES = 5;
 
     /** 失败计数 / 锁定窗口（秒） */
     private const LOGIN_LOCK_WINDOW = 900;
+
+    /** 单账号在窗口内累计失败到此阈值后，强制走验证码（防止任意 IP 把账号锁死，仅多了"必须看图"成本） */
+    private const FORCE_CAPTCHA_THRESHOLD = 3;
 
     protected string $modelClass = SysUser::class;
 
@@ -56,17 +59,22 @@ class LoginService extends BaseService
             throw new BusinessException('用户名或密码错误', ResponseCode::UNAUTHORIZED);
         }
 
-        // 1.1 账号失败锁定校验：超过阈值直接拒绝，不再校验密码（防暴力破解）
-        if (RateLimiter::attempts($this->lockKey($username)) >= self::MAX_LOGIN_FAILURES) {
-            $this->logLogin($username, null, false, '账号已被锁定', $ip);
+        // 1.1 「账号 + IP」维度失败锁定：同一 IP 连续错 N 次直接拒绝（防同 IP 暴力破解）
+        if (RateLimiter::attempts($this->lockKey($username, $ip)) >= self::MAX_LOGIN_FAILURES) {
+            $this->logLogin($username, null, false, '账号已被锁定（同 IP 连续失败）', $ip);
             throw new BusinessException(
-                sprintf('密码错误次数过多，账号已锁定，请 %d 分钟后再试', (int) (self::LOGIN_LOCK_WINDOW / 60)),
+                sprintf('密码错误次数过多，请 %d 分钟后再试', (int) (self::LOGIN_LOCK_WINDOW / 60)),
                 ResponseCode::TOO_MANY_REQUESTS
             );
         }
 
-        // 2. 验证码校验（按配置开关）
-        if (config('captcha.enabled', false) && !$this->verifyCaptcha($captchaKey, $captcha)) {
+        // 1.2 单账号在窗口内的失败总数达到「强制验证码」阈值后，必须带 captcha；
+        //     此分支不直接拒绝，避免任意 IP 把账号锁死，但拉高攻击者的人工成本
+        $forceCaptcha = RateLimiter::attempts($this->userFailKey($username)) >= self::FORCE_CAPTCHA_THRESHOLD;
+
+        // 2. 验证码校验（按配置开关；强制验证码场景始终校验）
+        $captchaRequired = $forceCaptcha || config('captcha.enabled', false);
+        if ($captchaRequired && !$this->verifyCaptcha($captchaKey, $captcha)) {
             throw BusinessException::badRequest('验证码错误或已过期');
         }
 
@@ -74,7 +82,7 @@ class LoginService extends BaseService
         /** @var SysUser|null $user */
         $user = SysUser::where('username', $username)->first();
         if (!$user) {
-            $this->recordLoginFailure($username);
+            $this->recordLoginFailure($username, $ip);
             $this->logLogin($username, null, false, '用户不存在', $ip);
             throw new BusinessException('用户名或密码错误', ResponseCode::UNAUTHORIZED);
         }
@@ -85,13 +93,14 @@ class LoginService extends BaseService
 
         // 4. 密码校验
         if (!$user->verifyPassword($password)) {
-            $this->recordLoginFailure($username);
+            $this->recordLoginFailure($username, $ip);
             $this->logLogin($username, $user->id, false, '密码错误', $ip);
             throw new BusinessException('用户名或密码错误', ResponseCode::UNAUTHORIZED);
         }
 
-        // 登录成功：清除失败计数
-        RateLimiter::clear($this->lockKey($username));
+        // 登录成功：清除两个维度的失败计数
+        RateLimiter::clear($this->lockKey($username, $ip));
+        RateLimiter::clear($this->userFailKey($username));
 
         // 5. 更新登录信息
         $user->login_ip    = $ip;
@@ -146,10 +155,17 @@ class LoginService extends BaseService
     /**
      * 生成图形验证码，返回 key + base64 图片。
      *
-     * @return array{key:string,image:string}
+     * 若 captcha 全局开关关闭（{@see config('captcha.enabled')}），不再生成图片浪费资源，
+     * 返回 null —— 控制器据此回 204 No Content。
+     *
+     * @return array{key:string,image:string}|null
      */
-    public function captcha(): array
+    public function captcha(): ?array
     {
+        if (!config('captcha.enabled', false)) {
+            return null;
+        }
+
         $builder = new \Webman\Captcha\CaptchaBuilder();
         $builder->build();
 
@@ -180,19 +196,31 @@ class LoginService extends BaseService
     }
 
     /**
-     * 记录一次登录失败（账号维度计数，窗口内累计）。
+     * 记录一次登录失败：同时累计「账号+IP」与「账号」两个维度。
      */
-    private function recordLoginFailure(string $username): void
+    private function recordLoginFailure(string $username, string $ip): void
     {
-        RateLimiter::increment($this->lockKey($username), self::LOGIN_LOCK_WINDOW);
+        RateLimiter::increment($this->lockKey($username, $ip), self::LOGIN_LOCK_WINDOW);
+        RateLimiter::increment($this->userFailKey($username), self::LOGIN_LOCK_WINDOW);
     }
 
     /**
-     * 账号失败锁定计数键（按用户名，忽略大小写差异由格式校验保证）。
+     * 账号+IP 双维度锁定 key。
+     *
+     * 旧实现按 username 单维度，任意 IP 失败 5 次即锁定 → 定向 DoS。改为
+     * 同 IP 攻击者只能"锁住自己这条 IP"对同一账号 15 分钟；其它 IP 的正常用户不受影响。
      */
-    private function lockKey(string $username): string
+    private function lockKey(string $username, string $ip): string
     {
-        return 'login_fail:' . strtolower($username);
+        return 'login_fail:' . strtolower($username) . ':' . $ip;
+    }
+
+    /**
+     * 仅按 username 计的全局失败计数（用于触发强制验证码，而不是直接拒绝）。
+     */
+    private function userFailKey(string $username): string
+    {
+        return 'login_fail_user:' . strtolower($username);
     }
 
     /**

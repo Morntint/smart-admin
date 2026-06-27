@@ -3,6 +3,7 @@
 namespace app\admin\service\ai;
 
 use app\admin\service\BaseService;
+use app\common\exception\BusinessException;
 use app\model\AiPromptTemplate;
 use support\Request;
 
@@ -70,7 +71,7 @@ class AiPromptService extends BaseService
         /** @var AiPromptTemplate $template */
         $template = $this->findOrFail($id);
         if ($template->is_system) {
-            throw new \app\common\exception\BusinessException('系统内置模板不可删除');
+            throw new BusinessException('系统内置模板不可删除');
         }
         $template->delete();
     }
@@ -83,7 +84,7 @@ class AiPromptService extends BaseService
         /** @var AiPromptTemplate|null $template */
         $template = AiPromptTemplate::where('code', $code)->where('status', 1)->first();
         if (!$template) {
-            throw new \app\common\exception\BusinessException('提示词模板不存在或已禁用');
+            throw new BusinessException('提示词模板不存在或已禁用');
         }
         return $this->render($template->content, $variables);
     }

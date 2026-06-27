@@ -4,7 +4,6 @@ namespace app\admin\service\ai;
 
 use app\admin\service\BaseService;
 use app\model\AiUsageRecord;
-use Illuminate\Support\Facades\DB;
 use support\Request;
 
 /**

@@ -5,6 +5,8 @@
     "notFound": "请求的资源不存在",
     "methodNotAllowed": "请求方法不允许",
     "requestTimeout": "请求超时，请稍后重试",
+    "conflict": "操作冲突，请稍后再试",
+    "tooManyRequests": "请求过于频繁，请稍后再试",
     "internalServerError": "服务器内部错误，请稍后重试",
     "badGateway": "网关错误，请稍后重试",
     "serviceUnavailable": "服务暂时不可用，请稍后重试",
@@ -112,7 +114,7 @@
   "notice": {
     "title": "通知",
     "btnRead": "标为已读",
-    "bar": ["通知", "消息", "代办"],
+    "bar": ["通知", "公告", "代办"],
     "text": ["暂无"],
     "viewAll": "查看全部"
   },
@@ -302,6 +304,12 @@
       "systemLog": "系统日志",
       "operationLog": "操作日志",
       "file": "文件管理",
+      "notice": "通知公告",
+      "systemNotice": "系统通知",
+      "systemAnnouncement": "系统公告",
+      "noticeSend": "发送通知",
+      "announcementPublish": "发布公告",
+      "myNotice": "我的消息",
       "nested": "嵌套菜单",
       "menu1": "菜单1",
       "menu2": "菜单2",
@@ -322,6 +330,16 @@
     "plan": {
       "title": "版本计划",
       "log": "更新日志"
+    },
+    "wechat": {
+      "title": "微信管理",
+      "manage": "管理首页",
+      "user": "用户管理",
+      "message": "消息管理",
+      "template": "模板管理",
+      "menu": "菜单管理",
+      "material": "素材管理",
+      "config": "配置管理"
     },
     "help": {
       "title": "帮助中心",

@@ -73,7 +73,6 @@ class AiAgent extends BaseModel
             'ai_agent_tool_relation',
             'agent_id',
             'tool_id'
-        )->withPivot(['config'])
-         ->withTimestamps();
+        )->withTimestamps();
     }
 }

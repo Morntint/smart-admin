@@ -142,6 +142,7 @@ class SysUser extends BaseModel
      * 验证密码（支持哈希升级）。
      *
      * 当存储的哈希 cost 不再满足要求时，自动重新哈希并保存。
+     * L-9：升级失败旧实现完全静默，问题难以察觉；改为记 warning 日志。
      */
     public function verifyPassword(string $password): bool
     {
@@ -153,8 +154,11 @@ class SysUser extends BaseModel
             try {
                 $this->password = password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]);
                 $this->save();
-            } catch (\Throwable) {
-                // 静默失败：升级失败不影响登录
+            } catch (\Throwable $e) {
+                \support\Log::warning('密码哈希升级失败', [
+                    'user_id' => $this->id,
+                    'error'   => $e->getMessage(),
+                ]);
             }
         }
 
@@ -188,5 +192,22 @@ class SysUser extends BaseModel
     public function bumpTokenVersion(): void
     {
         $this->increment('token_version');
+    }
+
+    /**
+     * 模型事件挂钩：用户 save / delete 时自动失效相关缓存。
+     *
+     * 解决 M-5：避免散落在各处的「忘记调 clear_permission_cache」导致旧 token_version
+     * / 旧角色权限继续在缓存里活 5 分钟。任何对 SysUser 的写操作（含批量 update via
+     * 模型实例、status 切换、role 同步）都会触发，从根上保证缓存与 DB 一致。
+     */
+    protected static function booted(): void
+    {
+        static::saved(function (SysUser $user): void {
+            clear_permission_cache((int) $user->id);
+        });
+        static::deleted(function (SysUser $user): void {
+            clear_permission_cache((int) $user->id);
+        });
     }
 }

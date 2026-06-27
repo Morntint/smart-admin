@@ -114,21 +114,6 @@ if (!function_exists('clear_permission_cache')) {
     }
 }
 
-if (!function_exists('csrf_token')) {
-    /**
-     * 生成/获取当前会话的 CSRF Token。
-     */
-    function csrf_token(): string
-    {
-        $token = request()->session()->get('_csrf_token');
-        if (!$token) {
-            $token = bin2hex(random_bytes(32));
-            request()->session()->put('_csrf_token', $token);
-        }
-        return $token;
-    }
-}
-
 if (!function_exists('make_password')) {
     /**
      * 生成密码哈希（统一使用 bcrypt，cost = 10）。

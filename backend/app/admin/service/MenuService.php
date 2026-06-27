@@ -45,6 +45,13 @@ class MenuService extends BaseService
      *  - 超级管理员：返回全部正常菜单
      *  - 普通用户：仅返回其角色关联的菜单
      *
+     * 隐藏路由（is_visible=0）的扩展授权（BE-N6）：
+     *  - 隐藏路由通常是"详情页 / 编辑页 / 发送页"等不在导航里展示但要能跳转的 URL；
+     *  - 每个隐藏路由都单独维护 sys_role_menu 关联过于繁琐；
+     *  - 这里采用"父级被授权即视为对其隐藏子路由也授权"：
+     *    若用户已能访问某菜单（含权限），则它直接挂的 is_visible=0 子菜单一并返回，
+     *    让前端 router 能注册并跳转。
+     *
      * 查询包含 BUTTON 类型仅用于在 convertToRoute() 中收集 meta.authList，
      * BUTTON 本身不会生成前端路由（convertToRoute 已将其从 children 过滤）。
      *
@@ -56,11 +63,20 @@ class MenuService extends BaseService
             ->whereIn('type', [SysMenu::TYPE_DIR, SysMenu::TYPE_MENU, SysMenu::TYPE_BUTTON]);
 
         if (!PermissionService::getInstance()->isSuperAdmin($userId)) {
-            $menuIds = $this->userMenuIds($userId);
+            $menuIds = PermissionService::getInstance()->getMenuIds($userId);
             if ($menuIds === []) {
                 return [];
             }
-            $query->whereIn('id', $menuIds);
+            // 把隐藏子路由的 ID 扩展进来：只要其父级菜单在用户菜单内，子隐藏路由也允许
+            $hiddenChildrenIds = SysMenu::where('status', SysMenu::STATUS_NORMAL)
+                ->where('is_visible', 0)
+                ->whereIn('type', [SysMenu::TYPE_DIR, SysMenu::TYPE_MENU])
+                ->whereIn('parent_id', $menuIds)
+                ->pluck('id')
+                ->all();
+
+            $effectiveIds = array_values(array_unique(array_merge($menuIds, $hiddenChildrenIds)));
+            $query->whereIn('id', $effectiveIds);
         }
 
         /** @var \Illuminate\Database\Eloquent\Collection<int,\app\model\SysMenu> $menuList */
@@ -70,27 +86,6 @@ class MenuService extends BaseService
         $menus = $menuList->toTree();
 
         return array_map([$this, 'convertToRoute'], $menus);
-    }
-
-    /**
-     * 获取用户角色关联的菜单 ID 集合。
-     *
-     * @return int[]
-     */
-    private function userMenuIds(int $userId): array
-    {
-        $user = \app\model\SysUser::find($userId);
-        if (!$user) {
-            return [];
-        }
-
-        /** @var \Illuminate\Database\Eloquent\Collection<int,\app\model\SysRole> $roles */
-        $roles = $user->roles()->with('menus')->get();
-        return $roles
-            ->flatMap(fn(\app\model\SysRole $role) => $role->menus->pluck('id'))
-            ->unique()
-            ->values()
-            ->all();
     }
 
     /**

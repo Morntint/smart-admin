@@ -47,7 +47,7 @@ interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
   showSuccessMessage?: boolean
 }
 
-const { VITE_API_URL, VITE_WITH_CREDENTIALS } = import.meta.env
+const { VITE_WITH_CREDENTIALS } = import.meta.env
 
 /** Axios实例 */
 const axiosInstance = axios.create({
@@ -98,6 +98,12 @@ axiosInstance.interceptors.request.use(
 /** 响应拦截器 */
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<BaseResponse>) => {
+    // 204 No Content / 空 body：当作"业务成功但无 data"返回，避免 destructure undefined 抛错。
+    // 用例：captcha.enabled=false 时 /admin/captcha 直接 204。
+    if (response.status === 204 || response.data == null) {
+      response.data = { code: ApiStatus.success, msg: '', data: null as any }
+      return response
+    }
     const { code, msg } = response.data
     if (code === ApiStatus.success) return response
     if (code === ApiStatus.unauthorized) handleUnauthorizedError(msg)
@@ -148,6 +154,12 @@ function logOut() {
 /**
  * 确保 Token 处于有效期内：临近过期时自动刷新。
  * 并发请求共享同一个刷新 Promise，避免重复刷新。
+ *
+ * 后端 refresh 加固后（M-16）：
+ *  - 剩余 > 1/3 lifetime 时刷新接口直接 400（不应触发）；
+ *  - 累计 50 次后 401（必须重登）；
+ *  - 刷新成功旧 token 立刻 token_version 失效。
+ * 任一失败分支都让本进程直接走 logOut，避免连发失败请求 + 提供清晰跳转。
  */
 async function ensureFreshToken(): Promise<void> {
   const userStore = useUserStore()
@@ -156,11 +168,13 @@ async function ensureFreshToken(): Promise<void> {
   // 未登录或无法解析过期时间时不处理
   if (!accessToken || !accessTokenExpire) return
 
+  // 已过期：旧实现"等 401 兜底"会先打一遍业务请求；这里直接登出更快收敛
+  if (accessTokenExpire <= Date.now()) {
+    handleUnauthorizedError($t('httpMsg.unauthorized'))
+  }
+
   // 未临近过期，无需刷新
   if (accessTokenExpire - Date.now() > TOKEN_REFRESH_AHEAD) return
-
-  // Token 已过期，刷新接口也会失败，交由 401 流程处理
-  if (accessTokenExpire <= Date.now()) return
 
   // 去重：复用进行中的刷新请求
   if (!refreshTokenPromise) {
@@ -174,7 +188,10 @@ async function ensureFreshToken(): Promise<void> {
 
 /**
  * 调用后端刷新接口换取新 Token 并写入 store。
- * 失败时静默返回 null（保留旧 Token，由后续 401 流程兜底）。
+ *
+ * 失败时主动触发登出（FE-5）：旧实现"静默返回 null 等 401 兜底"在
+ * 后端 refresh 加固后会让短时间内并发的多条业务请求各自失败一次再被踢登录页，
+ * 体验差且对后端造成无效压力。
  */
 async function doRefreshToken(): Promise<string | null> {
   const userStore = useUserStore()
@@ -188,9 +205,12 @@ async function doRefreshToken(): Promise<string | null> {
       userStore.setToken(token)
       return token
     }
+    // 后端返回非 success（例如 50 次刷新上限、token 未到刷新窗口）→ 直接登出
+    handleUnauthorizedError(res.data?.msg)
     return null
   } catch {
-    // 刷新失败不主动登出，等待业务请求触发 401 统一处理
+    // 网络或服务异常：登出兜底，避免后续请求继续失败
+    handleUnauthorizedError()
     return null
   }
 }

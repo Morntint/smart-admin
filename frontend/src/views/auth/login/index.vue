@@ -36,6 +36,24 @@
               />
             </ElFormItem>
 
+            <!-- 图形验证码：后端 captcha.enabled=false 时返回 204，前端隐藏控件 -->
+            <ElFormItem v-if="captchaImage" prop="captcha">
+              <div class="flex items-center gap-2 w-full">
+                <ElInput
+                  class="custom-height flex-1"
+                  v-model.trim="captchaInput"
+                  placeholder="请输入验证码"
+                />
+                <img
+                  :src="captchaImage"
+                  class="h-10 cursor-pointer rounded"
+                  alt="captcha"
+                  @click="refreshCaptcha"
+                  title="点击刷新"
+                />
+              </div>
+            </ElFormItem>
+
             <!-- 推拽验证 -->
             <div class="relative pb-5 mt-6">
               <div
@@ -100,9 +118,10 @@
   import { useUserStore } from '@/store/modules/user'
   import { useI18n } from 'vue-i18n'
   import { HttpError } from '@/utils/http/error'
-  import { fetchLogin } from '@/api/auth'
+  import { fetchLogin, fetchCaptcha } from '@/api/auth'
   import { ElNotification, type FormInstance, type FormRules } from 'element-plus'
   import { useSettingStore } from '@/store/modules/setting'
+  import { mittBus } from '@/utils/sys'
 
   defineOptions({ name: 'Login' })
 
@@ -140,12 +159,34 @@
 
   const loading = ref(false)
 
-  onMounted(() => {
-    // 默认填充超级管理员账号，方便演示登录
-    formData.username = 'admin'
-    formData.password = 'admin123'
-  })
+  // 不再预填默认账号——演示账号请放到登录页的"提示语"或文档里，
+  // 否则任何打开页面的人都拿到了管理员凭据（FE-2）。
 
+  // 图形验证码：mounted 时拉一次；返回 null 表示后端已关闭 captcha（FE-3）
+  const captchaKey = ref('')
+  const captchaImage = ref('')
+  const captchaInput = ref('')
+
+  const refreshCaptcha = async () => {
+    try {
+      const data = await fetchCaptcha()
+      if (data && data.key) {
+        captchaKey.value = data.key
+        captchaImage.value = data.image
+      } else {
+        // 后端关闭了 captcha，前端不渲染控件，登录请求带空串即可
+        captchaKey.value = ''
+        captchaImage.value = ''
+      }
+      captchaInput.value = ''
+    } catch {
+      // 拉取失败不阻断登录页加载；用户重试一次再试
+    }
+  }
+
+  onMounted(() => {
+    refreshCaptcha()
+  })
   // 登录
   const handleSubmit = async () => {
     if (!formRef.value) return
@@ -166,20 +207,12 @@
       // 登录请求
       const { username, password } = formData
 
-      console.log('[Login] 开始登录请求，参数:', {
-        username,
-        captcha_key: 'test',
-        captcha: '1234'
-      })
-
       const { token } = await fetchLogin({
         username,
         password,
-        captcha_key: 'test',
-        captcha: '1234'
+        captcha_key: captchaKey.value,
+        captcha: captchaInput.value
       })
-
-      console.log('[Login] 登录响应 token:', token)
 
       // 验证token
       if (!token) {
@@ -196,15 +229,19 @@
       // 获取 redirect 参数，如果存在则跳转到指定页面，否则跳转到首页
       const redirect = route.query.redirect as string
       router.push(redirect || '/')
+
+      // 触发登录成功事件（用于公告弹窗等）
+      nextTick(() => {
+        mittBus.emit('login:success')
+      })
     } catch (error) {
-      // 处理 HttpError
-      if (error instanceof HttpError) {
-        // console.log(error.code)
-      } else {
-        // 处理非 HttpError
-        // ElMessage.error('登录失败，请稍后重试')
+      // HttpError 已经在 axios 拦截器里弹过提示；其余错误仅在开发态打日志，
+      // 生产构建里被 vite drop_console 剔除（见 vite.config.ts）。
+      if (!(error instanceof HttpError) && import.meta.env.DEV) {
         console.error('[Login] Unexpected error:', error)
       }
+      // 任何失败都刷新一次验证码，避免重放
+      refreshCaptcha()
     } finally {
       loading.value = false
       resetDragVerify()

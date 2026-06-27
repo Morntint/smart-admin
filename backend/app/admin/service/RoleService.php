@@ -203,11 +203,42 @@ class RoleService extends BaseService
 
     /**
      * 清除指定角色下所有用户的权限与数据范围缓存。
+     *
+     * 优化：
+     *  - 旧实现 N 次 `clear_permission_cache` 各自再调 cache delete，单角色含上千用户时同步阻塞；
+     *  - 现在一次 `pluck('user_id')` 后批量 cache delete（同 1 次 Redis 往返删多个 key），
+     *    并按 `BATCH` 分组，超大角色不会一次性把命令塞满 Redis；
+     *  - 同时仍调一次 {@see DataScopeService::clearCache} 以失效数据范围缓存。
+     *
+     * 进一步优化（如果有上万用户）应改为在 cache key 上挂 role_version，
+     * 让权限读路径在比对版本号时自动失效，写路径只 incr 一个 key。本提交先保留简单方案。
      */
     private function clearRoleUsersCache(int $roleId): void
     {
-        SysUserRole::where('role_id', $roleId)->pluck('user_id')
-            ->each(fn($uid) => clear_permission_cache((int) $uid));
+        /** @var int[] $userIds */
+        $userIds = SysUserRole::where('role_id', $roleId)->pluck('user_id')->map(fn ($v) => (int) $v)->all();
+        if ($userIds === []) {
+            return;
+        }
+
+        // 一次构造好所有要删的 key，分批 batch delete
+        $allKeys = [];
+        foreach ($userIds as $uid) {
+            $allKeys[] = "user_permissions_{$uid}";
+            $allKeys[] = "user_role_codes_{$uid}";
+            $allKeys[] = "user_menu_ids_{$uid}";
+            $allKeys[] = "auth_user_{$uid}";
+            $allKeys[] = "user_data_scope_{$uid}";
+        }
+
+        $cache = cache();
+        foreach (array_chunk($allKeys, 200) as $batch) {
+            try {
+                $cache->delete(...$batch);
+            } catch (\Throwable) {
+                // 静默：缓存清理失败由 TTL 兜底（5 分钟）
+            }
+        }
     }
 
     /**

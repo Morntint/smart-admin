@@ -37,7 +37,7 @@ class AiKnowledgeController extends BaseController
     #[RequiresPermission('ai:knowledge:list')]
     public function index(Request $request): Response
     {
-        return $this->pageResponse($this->service->pageList($request));
+        return $this->pageResponse($this->service->pageList($request, $this->userId));
     }
 
     /**
@@ -47,7 +47,7 @@ class AiKnowledgeController extends BaseController
     #[RequiresPermission('ai:knowledge:list')]
     public function show(Request $request, int $id): Response
     {
-        return $this->success($this->service->detail($id));
+        return $this->success($this->service->detail($id, $this->userId));
     }
 
     /**
@@ -79,7 +79,7 @@ class AiKnowledgeController extends BaseController
     #[RequiresPermission('ai:knowledge:delete')]
     public function destroy(Request $request, int $id): Response
     {
-        $this->service->delete($id);
+        $this->service->delete($id, $this->userId);
         return $this->success(msg: '删除成功');
     }
 
@@ -92,7 +92,7 @@ class AiKnowledgeController extends BaseController
     #[RequiresPermission('ai:knowledge:list')]
     public function documents(Request $request, int $id): Response
     {
-        return $this->pageResponse($this->service->documentPageList($id, $request));
+        return $this->pageResponse($this->service->documentPageList($id, $request, $this->userId));
     }
 
     /**
@@ -122,7 +122,7 @@ class AiKnowledgeController extends BaseController
     #[RequiresPermission('ai:knowledge:delete')]
     public function destroyDocument(Request $request, int $id): Response
     {
-        $this->service->deleteDocument($id);
+        $this->service->deleteDocument($id, $this->userId);
         return $this->success(msg: '删除成功');
     }
 
@@ -135,6 +135,8 @@ class AiKnowledgeController extends BaseController
     {
         $doc = \app\model\AiKnowledgeDocument::findOrFail($id);
         $kb  = \app\model\AiKnowledgeBase::findOrFail($doc->kb_id);
+        // 对象级权限：仅 KB 创建者 / 超管可触发重处理
+        $this->service->assertKbAccessPublic($kb, $this->userId);
         $this->service->processDocument($doc, $kb);
         return $this->success(msg: '处理完成');
     }

@@ -48,12 +48,26 @@
     </ElDescriptions>
 
     <div v-if="detail" class="log-section">
-      <div class="log-section-title">请求参数</div>
+      <div class="log-section-title">
+        请求参数
+        <ElTag v-if="paramTruncated" type="warning" size="small" class="ml-2">已截断</ElTag>
+      </div>
+      <div v-if="paramTruncated" class="truncated-tip">
+        原始参数体积 {{ paramTruncated.size }} 字节，已截断展示前
+        {{ truncatedSampleLength(paramTruncated) }} 字符。
+      </div>
       <pre class="log-block">{{ formatted(paramObject) }}</pre>
     </div>
 
     <div v-if="detail" class="log-section">
-      <div class="log-section-title">返回结果</div>
+      <div class="log-section-title">
+        返回结果
+        <ElTag v-if="resultTruncated" type="warning" size="small" class="ml-2">已截断</ElTag>
+      </div>
+      <div v-if="resultTruncated" class="truncated-tip">
+        原始响应体积 {{ resultTruncated.size }} 字节，已截断展示前
+        {{ truncatedSampleLength(resultTruncated) }} 字符。
+      </div>
       <pre class="log-block">{{ formatted(resultObject) }}</pre>
     </div>
 
@@ -109,8 +123,33 @@
     return tryParse(props.detail?.result) ?? '-'
   })
 
+  /**
+   * 识别后端 OperationLog 中间件对超大字段的截断标记（M-18）。
+   *
+   * 后端在 result/param 写入 sys_operation_log 前会判断序列化长度，
+   * 超过阈值时把整段替换为 { __truncated__: true, size, sample }。
+   * 前端这里识别到时给出明显提示，避免开发者误以为后端"丢了字段"。
+   */
+  type Truncated = { __truncated__: true; size: number; sample: string }
+  const isTruncated = (value: unknown): value is Truncated =>
+    value !== null &&
+    typeof value === 'object' &&
+    (value as { __truncated__?: unknown }).__truncated__ === true
+
+  const paramTruncated = computed<Truncated | null>(() =>
+    isTruncated(paramObject.value) ? (paramObject.value as Truncated) : null
+  )
+  const resultTruncated = computed<Truncated | null>(() =>
+    isTruncated(resultObject.value) ? (resultObject.value as Truncated) : null
+  )
+  const truncatedSampleLength = (t: Truncated) => (t.sample ?? '').length
+
   const formatted = (value: unknown) => {
     if (value === null || value === undefined || value === '') return '-'
+    // 截断结构只展示 sample，避免 __truncated__/size 干扰阅读
+    if (isTruncated(value)) {
+      return value.sample
+    }
     if (typeof value === 'string') return value
     try {
       return JSON.stringify(value, null, 2)
@@ -178,5 +217,11 @@
 
   .error-msg {
     color: var(--el-color-danger);
+  }
+
+  .truncated-tip {
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: var(--el-color-warning);
   }
 </style>

@@ -86,6 +86,7 @@ class DataScopeService
         $hasDept    = false;
         $hasSelf    = false;
         $userDeptId = (int) ($user->dept_id ?? 0);
+        $descendantIdsCache = null; // 同一用户的 department 子部门列表只算一次
 
         foreach ($roles as $role) {
             switch ((int) $role->data_scope) {
@@ -104,7 +105,11 @@ class DataScopeService
                     if ($userDeptId > 0) {
                         $deptIds[] = $userDeptId;
                         if ($user->department) {
-                            $deptIds = array_merge($deptIds, $user->department->getDescendantIds());
+                            // 同一 computeScope 调用内复用：多角色都是 DEPT_AND_CHILD 时不再每次递归 N 层
+                            if ($descendantIdsCache === null) {
+                                $descendantIdsCache = $user->department->getDescendantIds();
+                            }
+                            $deptIds = array_merge($deptIds, $descendantIdsCache);
                         }
                         $hasDept = true;
                     }

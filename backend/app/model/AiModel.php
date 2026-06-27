@@ -2,6 +2,8 @@
 
 namespace app\model;
 
+use app\common\support\Crypto;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -12,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string      $provider
  * @property string      $model_name
  * @property string|null $base_url
- * @property string      $api_key
+ * @property string      $api_key  // 业务侧总是拿到明文；底层落库时透明加密
  * @property int         $max_tokens
  * @property float       $temperature
  * @property float       $top_p
@@ -48,4 +50,18 @@ class AiModel extends BaseModel
         'status'                    => 'integer',
         'sort'                      => 'integer',
     ];
+
+    /**
+     * api_key 透明加解密：写入时加密（带 v1: 前缀），读出时自动解密。
+     *
+     * 已有的明文历史数据由 {@see Crypto::decrypt()} 兜底原样返回，便于灰度迁移；
+     * 任何 `save()` 都会把它转成加密格式。
+     */
+    protected function apiKey(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => $value === null ? null : Crypto::decrypt((string) $value),
+            set: fn ($value) => $value === null ? null : Crypto::encrypt((string) $value),
+        );
+    }
 }

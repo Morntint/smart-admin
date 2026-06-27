@@ -863,3 +863,274 @@ export function fetchBatchDeleteFile(ids: number[]) {
     showSuccessMessage: true
   })
 }
+
+// ==================== 系统通知管理 ====================
+
+/**
+ * 获取通知分页列表（管理端）
+ */
+export function fetchGetNoticeList(params: Api.SystemManage.NoticeSearchParams) {
+  return request.get<{
+    list: Api.SystemManage.NoticeListItem[]
+    total: number
+    page: number
+    limit: number
+  }>({
+    url: '/admin/notice',
+    params
+  })
+}
+
+/**
+ * 获取通知详情（管理端）
+ */
+export function fetchGetNotice(id: number) {
+  return request.get<Api.SystemManage.NoticeListItem>({
+    url: `/admin/notice/${id}`
+  })
+}
+
+/**
+ * 当前登录用户收件箱
+ */
+export function fetchGetMyNoticeList(params: Api.SystemManage.NoticeSearchParams) {
+  return request.get<{
+    list: Api.SystemManage.NoticeListItem[]
+    total: number
+    page: number
+    limit: number
+    unread_count: number
+  }>({
+    url: '/admin/notice/my',
+    params
+  })
+}
+
+/**
+ * 当前登录用户通知未读统计
+ */
+export function fetchGetMyNoticeUnreadStats() {
+  return request.get<Api.SystemManage.NoticeUnreadStats>({
+    url: '/admin/notice/my/unread-stats'
+  })
+}
+
+/**
+ * 查看自己的通知详情
+ */
+export function fetchGetMyNotice(id: number) {
+  return request.get<Api.SystemManage.NoticeListItem>({
+    url: `/admin/notice/my/${id}`
+  })
+}
+
+/**
+ * 发送通知
+ */
+export function fetchCreateNotice(data: Api.SystemManage.NoticeSubmitParams) {
+  return request.post<{ id: number }>({
+    url: '/admin/notice',
+    params: data,
+    showSuccessMessage: true
+  })
+}
+
+/**
+ * 批量发送通知
+ */
+export function fetchBatchCreateNotice(data: Api.SystemManage.NoticeSubmitParams) {
+  return request.post<{ count: number }>({
+    url: '/admin/notice/batch',
+    params: data,
+    showSuccessMessage: true
+  })
+}
+
+/**
+ * 更新通知
+ */
+export function fetchUpdateNotice(id: number, data: Api.SystemManage.NoticeSubmitParams) {
+  return request.put({
+    url: `/admin/notice/${id}`,
+    params: data,
+    showSuccessMessage: true
+  })
+}
+
+/**
+ * 删除通知
+ */
+export function fetchDeleteNotice(id: number) {
+  return request.del({
+    url: `/admin/notice/${id}`,
+    showSuccessMessage: true
+  })
+}
+
+/**
+ * 批量删除通知
+ */
+export function fetchBatchDeleteNotice(ids: number[]) {
+  return request.del({
+    url: '/admin/notice/batch',
+    params: { ids },
+    showSuccessMessage: true
+  })
+}
+
+/**
+ * 标记单条已读
+ */
+export function fetchMarkNoticeRead(id: number) {
+  return request.put({
+    url: `/admin/notice/${id}/read`
+  })
+}
+
+/**
+ * 批量标记已读
+ */
+export function fetchBatchMarkNoticeRead(ids: number[]) {
+  return request.put({
+    url: '/admin/notice/batch-read',
+    params: { ids }
+  })
+}
+
+/**
+ * 当前用户全部标记已读
+ */
+export function fetchMarkAllNoticeRead() {
+  return request.put<{ count: number }>({
+    url: '/admin/notice/read-all'
+  })
+}
+
+// ==================== 系统公告管理 ====================
+
+/**
+ * 获取公告分页列表（管理端）
+ */
+export function fetchGetAnnouncementList(params: Api.SystemManage.AnnouncementSearchParams) {
+  return request.get<{
+    list: Api.SystemManage.AnnouncementListItem[]
+    total: number
+    page: number
+    limit: number
+  }>({
+    url: '/admin/announcement',
+    params
+  })
+}
+
+/**
+ * 获取公告详情（管理端）
+ */
+export function fetchGetAnnouncement(id: number) {
+  return request.get<Api.SystemManage.AnnouncementListItem>({
+    url: `/admin/announcement/${id}`
+  })
+}
+
+/**
+ * 获取有效公告列表（前台，已发布且在有效期内）
+ */
+export function fetchGetActiveAnnouncementList(params?: {
+  limit?: number
+  category?: string
+}) {
+  return request.get<Api.SystemManage.AnnouncementListItem[]>({
+    url: '/admin/announcement/active',
+    params
+  })
+}
+
+/**
+ * 获取公告详情（前台，自动累计阅读量）
+ */
+export function fetchGetActiveAnnouncement(id: number) {
+  return request.get<Api.SystemManage.AnnouncementListItem>({
+    url: `/admin/announcement/active/${id}`
+  })
+}
+
+/**
+ * 新建公告
+ */
+export function fetchCreateAnnouncement(data: Api.SystemManage.AnnouncementSubmitParams) {
+  return request.post<{ id: number }>({
+    url: '/admin/announcement',
+    params: data,
+    showSuccessMessage: true
+  })
+}
+
+/**
+ * 更新公告
+ */
+export function fetchUpdateAnnouncement(id: number, data: Api.SystemManage.AnnouncementSubmitParams) {
+  return request.put({
+    url: `/admin/announcement/${id}`,
+    params: data,
+    showSuccessMessage: true
+  })
+}
+
+/**
+ * 删除公告
+ */
+export function fetchDeleteAnnouncement(id: number) {
+  return request.del({
+    url: `/admin/announcement/${id}`,
+    showSuccessMessage: true
+  })
+}
+
+/**
+ * 批量删除公告
+ */
+export function fetchBatchDeleteAnnouncement(ids: number[]) {
+  return request.del({
+    url: '/admin/announcement/batch',
+    params: { ids },
+    showSuccessMessage: true
+  })
+}
+
+/**
+ * 发布公告
+ */
+export function fetchPublishAnnouncement(id: number) {
+  return request.put({
+    url: `/admin/announcement/${id}/publish`,
+    showSuccessMessage: true
+  })
+}
+
+/**
+ * 下线公告
+ */
+export function fetchOfflineAnnouncement(id: number) {
+  return request.put({
+    url: `/admin/announcement/${id}/offline`,
+    showSuccessMessage: true
+  })
+}
+
+/**
+ * 切换置顶
+ */
+export function fetchToggleAnnouncementTop(id: number) {
+  return request.put<{ is_top: number }>({
+    url: `/admin/announcement/${id}/toggle-top`
+  })
+}
+
+/**
+ * 切换弹窗强提示
+ */
+export function fetchToggleAnnouncementPopup(id: number) {
+  return request.put<{ is_popup: number }>({
+    url: `/admin/announcement/${id}/toggle-popup`
+  })
+}

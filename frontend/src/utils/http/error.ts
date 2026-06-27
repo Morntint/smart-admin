@@ -80,6 +80,9 @@ export class HttpError extends Error {
   }
 
   public toLogData(): ErrorLogData {
+    // 注意：toLogData 仅输出业务可读字段（code/message/data/url/method/stack）。
+    // 严禁加入 request headers（含 Authorization Bearer Token）或 cookie，
+    // 否则任何打开 devtools 的人都能从 console 拿到当前会话凭据（FE-9）。
     return {
       code: this.code,
       message: this.message,
@@ -104,6 +107,8 @@ const getErrorMessage = (status: number): string => {
     [ApiStatus.notFound]: 'httpMsg.notFound',
     [ApiStatus.methodNotAllowed]: 'httpMsg.methodNotAllowed',
     [ApiStatus.requestTimeout]: 'httpMsg.requestTimeout',
+    [ApiStatus.conflict]: 'httpMsg.conflict',
+    [ApiStatus.tooManyRequests]: 'httpMsg.tooManyRequests',
     [ApiStatus.internalServerError]: 'httpMsg.internalServerError',
     [ApiStatus.badGateway]: 'httpMsg.badGateway',
     [ApiStatus.serviceUnavailable]: 'httpMsg.serviceUnavailable',
@@ -115,8 +120,9 @@ const getErrorMessage = (status: number): string => {
 
 /**
  * 处理错误
- * @param error 错误对象
- * @returns 错误对象
+ *
+ * 4xx 状态码（业务可读消息）：优先用后端 `msg` 字段；只有 msg 缺失时才回退本地 i18n 文案。
+ * 5xx：本地化文案足够，避免把"服务器内部错误"原文透传给最终用户。
  */
 export function handleError(error: AxiosError<ErrorResponse>): never {
   // 处理取消的请求
@@ -126,7 +132,7 @@ export function handleError(error: AxiosError<ErrorResponse>): never {
   }
 
   const statusCode = error.response?.status
-  const errorMessage = error.response?.data?.msg || error.message
+  const backendMsg = error.response?.data?.msg
   const requestConfig = error.config
 
   // 处理网络错误
@@ -137,10 +143,16 @@ export function handleError(error: AxiosError<ErrorResponse>): never {
     })
   }
 
-  // 处理 HTTP 状态码错误
-  const message = statusCode
-    ? getErrorMessage(statusCode)
-    : errorMessage || $t('httpMsg.requestFailed')
+  // 4xx：优先用后端业务消息（FE-7）
+  let message: string
+  if (statusCode && statusCode >= 400 && statusCode < 500 && backendMsg) {
+    message = backendMsg
+  } else if (statusCode) {
+    message = getErrorMessage(statusCode)
+  } else {
+    message = backendMsg || $t('httpMsg.requestFailed')
+  }
+
   throw new HttpError(message, statusCode || ApiStatus.error, {
     data: error.response.data,
     url: requestConfig?.url,

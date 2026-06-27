@@ -141,6 +141,19 @@ export const useUserStore = defineStore(
     }
 
     /**
+     * 从持久化状态恢复后，重新解析 token 过期时间。
+     *
+     * accessTokenExpire 不进 localStorage（持久化字段 pick 列表里没有它），
+     * 否则容易出现"localStorage 里写着过期时间但 token 已经被后端 token_version 作废"
+     * 之类不一致状态。每次启动从 JWT payload 现算一次最稳。
+     */
+    const restoreTokenExpire = () => {
+      if (accessToken.value) {
+        accessTokenExpire.value = getTokenExpireTime(accessToken.value)
+      }
+    }
+
+    /**
      * 退出登录
      * 清空所有用户相关状态并跳转到登录页
      * 如果是同一账号重新登录，保留工作台标签页
@@ -230,6 +243,7 @@ export const useUserStore = defineStore(
       setLockStatus,
       setLockPassword,
       setToken,
+      restoreTokenExpire,
       logOut,
       checkAndClearWorktabs
     }
@@ -237,7 +251,12 @@ export const useUserStore = defineStore(
   {
     persist: {
       key: 'user',
-      storage: localStorage
+      storage: localStorage,
+      // 显式列出持久化字段（FE-6）：
+      //  - lockPassword / isLock 不持久化：刷新页面应回到"未锁屏"，且锁屏密码不应明文落 localStorage
+      //  - searchHistory 大且与登录态无关，仍可保留持久化
+      //  - accessTokenExpire 由 setToken() 在写入 token 时同步还原，无需持久化
+      pick: ['language', 'isLogin', 'info', 'searchHistory', 'accessToken', 'refreshToken']
     }
   }
 )

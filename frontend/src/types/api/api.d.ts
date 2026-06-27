@@ -314,5 +314,122 @@ declare namespace Api {
       create_by?: number
       create_time: string
     }
+
+    /** 系统通知列表项 */
+    interface NoticeListItem {
+      id: number
+      user_id: number
+      username?: string
+      user_nickname?: string
+      type: number
+      type_text?: string
+      level: 'info' | 'success' | 'warning' | 'danger'
+      level_text?: string
+      title: string
+      content?: string
+      biz_type?: string
+      biz_id?: string
+      link?: string
+      is_read: number
+      read_time?: string
+      sender_id?: number
+      sender_name?: string
+      expire_time?: string
+      /** 派生字段：1 已过期 / 0 未过期；myInbox 接口下发 */
+      is_expired?: 0 | 1
+      created_at: string
+      updated_at?: string
+    }
+
+    /** 系统通知搜索参数 */
+    type NoticeSearchParams = Partial<{
+      page: number
+      limit: number
+      keyword: string
+      type: string
+      level: string
+      is_read: string
+      user_id: number
+      start_date: string
+      end_date: string
+    }>
+
+    /** 系统通知提交参数 */
+    interface NoticeSubmitParams {
+      user_id?: number
+      user_ids?: number[]
+      type?: number
+      level?: 'info' | 'success' | 'warning' | 'danger'
+      title?: string
+      content?: string
+      biz_type?: string
+      biz_id?: string
+      link?: string
+      expire_time?: string
+    }
+
+    /** 系统通知未读统计 */
+    interface NoticeUnreadStats {
+      total: number
+      by_level: {
+        info: number
+        success: number
+        warning: number
+        danger: number
+      }
+    }
+
+    /** 系统公告列表项 */
+    interface AnnouncementListItem {
+      id: number
+      title: string
+      content: string
+      category: 'notice' | 'announcement' | 'activity' | 'maintenance'
+      category_text?: string
+      level: 'info' | 'important' | 'urgent'
+      level_text?: string
+      is_top: number
+      is_popup: number
+      status: number
+      status_text?: string
+      publisher_id?: number
+      publisher_name?: string
+      published_at?: string
+      effective_at?: string
+      expire_at?: string
+      view_count: number
+      sort: number
+      remark?: string
+      created_at: string
+      updated_at?: string
+    }
+
+    /** 系统公告搜索参数 */
+    type AnnouncementSearchParams = Partial<{
+      page: number
+      limit: number
+      keyword: string
+      category: string
+      level: string
+      status: string
+      is_top: string
+      start_date: string
+      end_date: string
+    }>
+
+    /** 系统公告提交参数 */
+    interface AnnouncementSubmitParams {
+      title?: string
+      content?: string
+      category?: 'notice' | 'announcement' | 'activity' | 'maintenance'
+      level?: 'info' | 'important' | 'urgent'
+      is_top?: number
+      is_popup?: number
+      status?: number
+      effective_at?: string
+      expire_at?: string
+      sort?: number
+      remark?: string
+    }
   }
 }

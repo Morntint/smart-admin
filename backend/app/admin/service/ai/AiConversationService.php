@@ -3,12 +3,13 @@
 namespace app\admin\service\ai;
 
 use app\admin\service\BaseService;
+use app\admin\service\ai\tool\NL2SqlPrompt;
+use app\admin\service\ai\tool\ToolGovernance;
 use app\common\exception\BusinessException;
 use app\model\AiAgent;
 use app\model\AiConversation;
 use app\model\AiConversationMessage;
 use app\model\AiUsageRecord;
-use app\model\AiTool;
 use support\Request;
 use support\Response;
 use support\Log;
@@ -28,6 +29,9 @@ class AiConversationService extends BaseService
 
     /** @var int 最大工具调用次数，防止无限循环 */
     private const MAX_TOOL_CALLS = 5;
+
+    /** @var int 工具结果回灌 LLM context 时的最大字符长度，防止表膨胀 + Token 超限 */
+    private const MAX_TOOL_RESULT_CHARS = 16384;
 
     /**
      * 对话列表
@@ -53,6 +57,10 @@ class AiConversationService extends BaseService
         if ($agent->status !== 1) {
             throw new BusinessException('Agent 已禁用');
         }
+        // 仅公开 Agent 或创建者本人可创建会话（避免普通用户用任意 agent_id 烧 Token）
+        if ((int) ($agent->is_public ?? 0) !== 1 && (int) ($agent->created_by ?? 0) !== $userId) {
+            throw new BusinessException('无权使用该 Agent');
+        }
 
         return AiConversation::createData([
             'user_id'           => $userId,
@@ -71,8 +79,10 @@ class AiConversationService extends BaseService
         if (!$conv) {
             throw new BusinessException('会话不存在');
         }
-        AiConversationMessage::where('conversation_id', $id)->delete();
-        $conv->delete();
+        $this->transaction(function () use ($id, $conv) {
+            AiConversationMessage::where('conversation_id', $id)->delete();
+            $conv->delete();
+        });
     }
 
     /**
@@ -110,7 +120,7 @@ class AiConversationService extends BaseService
         $conv = $this->resolveConversation($conversationId, $agentId, $userId);
 
         // 获取 Agent 配置（含工具）
-        $agentConfig = (new AiAgentService())->getAgentConfig($conv->agent_id);
+        $agentConfig = AiAgentService::getInstance()->getAgentConfig($conv->agent_id);
 
         // 构建消息上下文
         $messages = $this->buildMessages($conv->id, $agentConfig, $content, $conv->max_history_rounds ?? 10);
@@ -138,22 +148,20 @@ class AiConversationService extends BaseService
             'has_tools_option' => isset($options['tools']),
         ]);
 
-        $roundIndex     = $conv->round_count + 1;
+        $roundIndex     = 0;
         $totalUsage     = ['prompt_tokens' => 0, 'completion_tokens' => 0, 'total_tokens' => 0];
         $finalContent   = '';
         $toolCallsData  = [];
         $startTime      = microtime(true);
         $gateway        = AiGateway::fromModel($agentConfig['model']);
-
-        // 保存用户消息
-        AiConversationMessage::createData([
-            'conversation_id' => $conv->id,
-            'round_index'     => $roundIndex,
-            'role'            => 'user',
-            'content'         => $content,
-        ]);
+        $result         = [];
+        $finalResult    = null;
 
         try {
+            // 在 try 内分配 round_index 并落 user 消息：若后续 LLM 调用失败，统一在 catch 里做补偿删除，
+            // 保证"失败 → 不留任何脏数据"，便于前端重试同一条消息时不重复占位 round。
+            $roundIndex = $this->allocateRoundAndPersistUserMessage($conv, $content);
+
             // 工具调用循环
             $callCount = 0;
             while ($callCount < self::MAX_TOOL_CALLS) {
@@ -204,7 +212,7 @@ class AiConversationService extends BaseService
                         'conversation_id' => $conv->id,
                         'round_index'     => $roundIndex,
                         'role'            => 'tool',
-                        'content'         => json_encode($toolResult, JSON_UNESCAPED_UNICODE),
+                        'content'         => $this->encodeToolResult($toolResult),
                         'tool_call_id'    => $toolCall['id'] ?? null,
                         'name'            => $toolCall['function']['name'] ?? null,
                     ]);
@@ -214,7 +222,7 @@ class AiConversationService extends BaseService
                         'role'         => 'tool',
                         'tool_call_id' => $toolCall['id'] ?? null,
                         'name'         => $toolCall['function']['name'] ?? null,
-                        'content'      => json_encode($toolResult, JSON_UNESCAPED_UNICODE),
+                        'content'      => $this->encodeToolResult($toolResult),
                     ];
                 }
 
@@ -242,6 +250,10 @@ class AiConversationService extends BaseService
 
         $duration = (int) ((microtime(true) - $startTime) * 1000);
 
+        // M-2 修复：达到 MAX_TOOL_CALLS 走兜底时元数据应取最终一次响应（$finalResult），否则取最后一次循环响应（$result）
+        $finalSource = $finalResult ?? $result;
+        $finalModelName = $finalSource['model'] ?? $agentConfig['model']['model_name'] ?? 'unknown';
+
         // 保存最终助手回复
         $assistantMsg = AiConversationMessage::createData([
             'conversation_id' => $conv->id,
@@ -250,12 +262,12 @@ class AiConversationService extends BaseService
             'content'         => $finalContent,
             'token_usage'     => $totalUsage,
             'cost'            => AiGateway::calculateCost(
-                $result['model'] ?? $agentConfig['model']['model_name'] ?? 'unknown',
+                $finalModelName,
                 $totalUsage['prompt_tokens'],
                 $totalUsage['completion_tokens']
             ),
             'duration'        => $duration,
-            'model_name'      => $result['model'] ?? $agentConfig['model']['model_name'] ?? '',
+            'model_name'      => $finalModelName,
         ]);
 
         // 更新会话统计
@@ -264,7 +276,7 @@ class AiConversationService extends BaseService
         // 记录用量
         $this->recordUsage($userId, $conv->agent_id, [
             'usage' => $totalUsage,
-            'model' => $result['model'] ?? $agentConfig['model']['model_name'] ?? '',
+            'model' => $finalModelName,
         ], $duration);
 
         return [
@@ -280,11 +292,17 @@ class AiConversationService extends BaseService
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            $errorDuration = (int) ((microtime(true) - $startTime) * 1000);
-            $this->recordUsage($userId, $conv->agent_id, [
-                'usage' => $totalUsage,
-                'model' => $agentConfig['model']['model_name'] ?? '',
-            ], $errorDuration, 0, $e->getMessage());
+            // 补偿：失败时清除本轮已落库的所有消息（user + 中间过程产生的 assistant/tool），
+            // 保证调用方"失败 → 无脏数据"的语义，便于上层重试。
+            if ($roundIndex > 0) {
+                try {
+                    AiConversationMessage::where('conversation_id', $conv->id)
+                        ->where('round_index', $roundIndex)
+                        ->delete();
+                } catch (\Throwable $ce) {
+                    Log::warning('回滚本轮消息失败', ['error' => $ce->getMessage()]);
+                }
+            }
 
             throw $e;
         }
@@ -300,7 +318,7 @@ class AiConversationService extends BaseService
         $agentId        = $params['agent_id'] ?? null;
 
         $conv        = $this->resolveConversation($conversationId, $agentId, $userId);
-        $agentConfig = (new AiAgentService())->getAgentConfig($conv->agent_id);
+        $agentConfig = AiAgentService::getInstance()->getAgentConfig($conv->agent_id);
         $messages    = $this->buildMessages($conv->id, $agentConfig, $content, $agentConfig['max_history_rounds'] ?? 10);
 
         // 获取要使用的工具：本次消息发送时用户选择的工具优先，否则使用 Agent 绑定的所有工具
@@ -319,7 +337,7 @@ class AiConversationService extends BaseService
         }
 
         $gateway        = AiGateway::fromModel($agentConfig['model']);
-        $roundIndex     = $conv->round_count + 1;
+        $roundIndex     = 0;
         $fullContent    = '';
         $usageData      = null;
         $startTime      = microtime(true);
@@ -327,15 +345,10 @@ class AiConversationService extends BaseService
         $assistantMsg   = null;
         $errorOccurred  = false;
 
-        // 保存用户消息
-        AiConversationMessage::createData([
-            'conversation_id' => $conv->id,
-            'round_index'     => $roundIndex,
-            'role'            => 'user',
-            'content'         => $content,
-        ]);
-
         try {
+            // 在 try 内分配 round_index 并落 user 消息；失败时统一在 catch 中补偿删除。
+            $roundIndex = $this->allocateRoundAndPersistUserMessage($conv, $content);
+
             // 流式输出
             $stream = $gateway->chatStream($messages, $options);
 
@@ -476,7 +489,7 @@ class AiConversationService extends BaseService
                     'conversation_id' => $conv->id,
                     'round_index'     => $roundIndex,
                     'role'            => 'tool',
-                    'content'         => json_encode($toolResult, JSON_UNESCAPED_UNICODE),
+                    'content'         => $this->encodeToolResult($toolResult),
                     'tool_call_id'    => $toolCallId,
                     'name'            => $toolName,
                 ]);
@@ -486,33 +499,37 @@ class AiConversationService extends BaseService
                     'role'         => 'tool',
                     'tool_call_id' => $toolCallId,
                     'name'         => $toolName,
-                    'content'      => json_encode($toolResult, JSON_UNESCAPED_UNICODE),
+                    'content'      => $this->encodeToolResult($toolResult),
                 ];
             }
 
             // 通知前端工具调用完成
             yield json_encode(['type' => 'tool_call_end', 'data' => ['count' => count($toolCalls)]]);
 
-            // 再次调用 AI 获取最终回复（非流式）- 移除 tools 配置，强制 AI 返回最终内容
+            // 第二轮：用流式拿最终回复（去掉 tools/tool_choice，避免再触发一次工具调用）。
+            // 旧实现这里走的是非流式 chat() + mb_str_split + usleep 模拟"打字效果"，
+            // 既丢失真实流式响应、又额外阻塞 50ms × N 次。改成 chatStream 后用户体验一致。
             $finalOptions = array_diff_key($options, array_flip(['tools', 'tool_choice']));
-            $finalResult = $gateway->chat($messages, $finalOptions);
-            $finalContent = $finalResult['content'] ?? '';
-            $usageData = $finalResult['usage'] ?? $usageData;
-
-            // 如果第二次调用 AI 仍然产生了工具调用，说明工具结果不够清晰或需要多轮工具调用
-            // 这种情况下我们把工具调用的内容也作为回复的一部分
-            if (!empty($finalResult['tool_calls'])) {
-                Log::warning('第二次 AI 调用仍然产生了工具调用，跳过执行，直接返回内容', [
-                    'tool_calls_count' => count($finalResult['tool_calls']),
-                    'content' => $finalContent,
-                ]);
-            }
-
-            // 输出最终回复内容 - 按 20 字符的 chunk 输出，平衡用户体验和性能
-            $chunks = mb_str_split($finalContent, 20);
-            foreach ($chunks as $chunk) {
-                yield json_encode(['type' => 'content', 'data' => $chunk]);
-                usleep(50000); // 50ms 间隔，流畅的打字效果
+            $finalContent = '';
+            $finalStream  = $gateway->chatStream($messages, $finalOptions);
+            foreach ($finalStream as $chunk) {
+                $data = json_decode($chunk, true);
+                if (!$data) continue;
+                if (isset($data['error'])) {
+                    Log::warning('第二轮流式响应包含错误', ['error' => $data['error']]);
+                    continue;
+                }
+                $choices2 = $data['choices'] ?? [];
+                if (empty($choices2)) continue;
+                $delta2 = $choices2[0]['delta'] ?? ($choices2[0]['message'] ?? []);
+                $text2  = $delta2['content'] ?? '';
+                if ($text2 !== '' && $text2 !== null) {
+                    $finalContent .= $text2;
+                    yield json_encode(['type' => 'content', 'data' => $text2]);
+                }
+                if (isset($data['usage']) && $data['usage'] !== null) {
+                    $usageData = $data['usage'];
+                }
             }
 
             // 保存最终助手回复
@@ -575,15 +592,17 @@ class AiConversationService extends BaseService
             ]);
         }
 
-        // 更新会话统计
-        $conv->round_count  = $roundIndex;
-        $conv->total_tokens += $usage['total_tokens'];
-        $conv->save();
+        // 更新会话统计：用 raw 表达式做原子累加，避免并发覆盖
+        AiConversation::where('id', $conv->id)->update([
+            'round_count'  => $roundIndex,
+            'total_tokens' => $conv->getConnection()->raw('total_tokens + ' . (int) $usage['total_tokens']),
+        ]);
 
         // 自动更新标题
         if ($roundIndex === 1) {
-            $conv->title = mb_substr($content, 0, 50);
-            $conv->save();
+            AiConversation::where('id', $conv->id)->update([
+                'title' => mb_substr($content, 0, 50),
+            ]);
         }
 
         // 记录用量
@@ -610,11 +629,16 @@ class AiConversationService extends BaseService
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            $errorDuration = (int) ((microtime(true) - $startTime) * 1000);
-            $this->recordUsage($userId, $conv->agent_id, [
-                'usage' => ['prompt_tokens' => 0, 'completion_tokens' => 0, 'total_tokens' => 0],
-                'model' => $agentConfig['model']['model_name'] ?? '',
-            ], $errorDuration, 0, $e->getMessage());
+            // 补偿：失败时清除本轮已落库的所有消息
+            if ($roundIndex > 0) {
+                try {
+                    AiConversationMessage::where('conversation_id', $conv->id)
+                        ->where('round_index', $roundIndex)
+                        ->delete();
+                } catch (\Throwable $ce) {
+                    Log::warning('回滚本轮流式消息失败', ['error' => $ce->getMessage()]);
+                }
+            }
 
             throw $e;
         }
@@ -651,28 +675,18 @@ class AiConversationService extends BaseService
         // 1. 系统提示词
         $systemPrompt = $agentConfig['system_prompt'] ?? '你是一个有用的 AI 助手。';
 
-        // AI 工具使用建议（相对日期，避免 AI 缺少实时时间感知）
-        $toolUsageHint = <<<EOD
-
-【重要】工具使用建议：
-当用户查询"今天"、"本周"、"本月"、"最近7天"等时间相关内容时，请在调用工具时使用相对日期参数：
-- "今天" / "今日" → start_date: "today"
-- "昨天" → start_date: "yesterday"
-- "本周" → start_date: "this_week"
-- "本月" → start_date: "this_month"
-- "最近7天" → start_date: "last_7_days"
-- "最近30天" → start_date: "last_30_days"
-- "上周" → start_date: "last_week"
-- "上月" → start_date: "last_month"
-
-这样可以避免因缺少实时时间感知而产生日期错误。
-EOD;
-        $systemPrompt .= $toolUsageHint;
+        // 如果 Agent 启用了 query_database 工具，把表/字段白名单和相对日期约定
+        // 折叠为 markdown 注入 system prompt —— 收敛此前硬编码在本方法里的 14 行
+        // "相对日期使用建议"以及 DateParser 的描述，单源真相。
+        $agentTools = $agentConfig['tools'] ?? [];
+        if (NL2SqlPrompt::isEnabled($agentTools)) {
+            $systemPrompt .= NL2SqlPrompt::build();
+        }
 
         // RAG 知识增强
         $kbIds = $agentConfig['knowledge_base_ids'] ?? [];
         if (!empty($kbIds)) {
-            $knowledgeService = new AiKnowledgeService();
+            $knowledgeService = AiKnowledgeService::getInstance();
             $contexts = [];
             foreach ($kbIds as $kbId) {
                 $chunks = $knowledgeService->searchChunks((int) $kbId, $currentContent, 3);
@@ -685,8 +699,17 @@ EOD;
 
         $messages[] = ['role' => 'system', 'content' => $systemPrompt];
 
-        // 2. 历史消息
+        // 2. 历史消息：按 round_index 区间查询，不再 ::all() 全表扫
+        //    会话很久后消息表有上万条，旧实现把全部行加载到内存再 PHP 端截断，
+        //    既慢又吃内存。现在先取 MAX(round_index) 算出本次需要的下限，
+        //    再用 where + orderBy + limit 在 DB 侧裁剪。
+        $maxRound = (int) AiConversationMessage::where('conversation_id', $conversationId)
+            ->max('round_index');
+        $minRound = max(1, $maxRound - $maxHistoryRounds + 1);
+
+        /** @var \Illuminate\Database\Eloquent\Collection<int,AiConversationMessage> $history */
         $history = AiConversationMessage::where('conversation_id', $conversationId)
+            ->where('round_index', '>=', $minRound)
             ->orderBy('round_index')
             ->orderBy('id')
             ->get();
@@ -802,16 +825,13 @@ EOD;
     }
 
     /**
-     * 格式化工具为 OpenAI Function Calling 格式
+     * 格式化工具为 OpenAI Function Calling 格式。
+     * 工具表查询时已 where status=1 过滤；此处只做格式转换。
      */
     private function formatTools(array $tools): array
     {
         $formatted = [];
         foreach ($tools as $tool) {
-            // 只使用状态启用的工具
-            if (empty($tool['status']) || $tool['status'] !== 1) {
-                continue;
-            }
             $formatted[] = [
                 'type'     => 'function',
                 'function' => [
@@ -825,18 +845,36 @@ EOD;
     }
 
     /**
-     * 执行单个工具调用
+     * 把工具调用结果安全编码为字符串：
+     *  - JSON 编码失败时退化为字符串形式
+     *  - 超过 MAX_TOOL_RESULT_CHARS 时截断，并附说明
+     *
+     * 截断既能避免 sys_operation_log / 消息表膨胀，也能避免下一轮 LLM 调用直接超出上下文窗口。
+     */
+    private function encodeToolResult(mixed $result): string
+    {
+        $encoded = json_encode($result, JSON_UNESCAPED_UNICODE);
+        if ($encoded === false) {
+            $encoded = (string) (is_scalar($result) ? $result : '[unserializable]');
+        }
+        if (mb_strlen($encoded) > self::MAX_TOOL_RESULT_CHARS) {
+            $encoded = mb_substr($encoded, 0, self::MAX_TOOL_RESULT_CHARS)
+                . sprintf('...[truncated, total %d chars]', mb_strlen($encoded));
+        }
+        return $encoded;
+    }
+
+    /**
+     * 执行单个工具调用。
+     *
+     * 通过 {@see ToolGovernance::invoke()} 串起：DB 校验 / 限流 / schema 校验 /
+     * 派发到 ToolRegistry / 截断 / 审计；任何失败都被包成结构化错误而非异常，
+     * LLM 可基于错误自行修正参数后再次调用。
      */
     private function executeToolCall(array $toolCall, array $context): mixed
     {
         $funcName = $toolCall['function']['name'] ?? '';
         $args     = $toolCall['function']['arguments'] ?? '{}';
-
-        Log::debug('executeToolCall 原始参数', [
-            'funcName' => $funcName,
-            'args_type' => gettype($args),
-            'args_value' => $args,
-        ]);
 
         if (is_string($args)) {
             $decoded = json_decode($args, true);
@@ -844,42 +882,71 @@ EOD;
                 $args = $decoded;
             } else {
                 Log::warning('工具调用参数 JSON 解析失败', [
-                    'args' => $args,
+                    'tool'  => $funcName,
+                    'args'  => $args,
                     'error' => json_last_error_msg(),
                 ]);
                 $args = [];
             }
         }
-
         if (!is_array($args)) {
             $args = [];
         }
 
-        // 查找工具定义
-        /** @var AiTool|null $tool */
-        $tool = AiTool::where('code', $funcName)->first();
-        if (!$tool) {
-            return ['error' => "工具不存在: {$funcName}"];
-        }
+        $outcome = ToolGovernance::getInstance()->invoke((string) $funcName, $args, $context);
 
-        try {
-            return ToolExecutor::execute($tool, $args, $context);
-        } catch (\Throwable $e) {
-            Log::error('工具执行异常', [
-                'tool' => $funcName,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            return ['error' => $e->getMessage()];
+        // 成功：直接把工具原结果回给 LLM 上下文
+        if (($outcome['success'] ?? false) === true) {
+            return $outcome['result'] ?? null;
         }
+        // 失败：把治理层包好的错误结构直接交给 LLM；不再二次包裹，避免冗余字段
+        return [
+            'success' => false,
+            'error'   => $outcome['error'] ?? '工具调用失败',
+            'code'    => $outcome['code']  ?? 'UNKNOWN',
+            'tool'    => $funcName,
+        ];
     }
 
     private function updateConversationStats(AiConversation $conv, array $result, int $roundIndex): void
     {
         $usage = $result['usage'] ?? [];
-        $conv->round_count  = $roundIndex;
-        $conv->total_tokens += ($usage['total_tokens'] ?? 0);
-        $conv->save();
+        $totalTokens = (int) ($usage['total_tokens'] ?? 0);
+        // 用 increment / raw 表达式替代 PHP 端"读-改-写"，避免并发同会话两次发送相互覆盖
+        AiConversation::where('id', $conv->id)->update([
+            'round_count'  => $roundIndex,
+            'total_tokens' => $conv->getConnection()->raw('total_tokens + ' . $totalTokens),
+        ]);
+    }
+
+    /**
+     * 原子分配下一个 round_index 并写入用户消息。
+     *
+     * 在一个事务里：
+     *  1. 锁定会话行（lockForUpdate），同会话并发请求按行锁串行；
+     *  2. 取消息表的 MAX(round_index)+1，避免依赖 round_count 这种聚合字段；
+     *  3. 写入 user 消息。
+     *
+     * 返回新分配的 round_index。
+     */
+    private function allocateRoundAndPersistUserMessage(AiConversation $conv, string $content): int
+    {
+        return $this->transaction(function () use ($conv, $content): int {
+            // 锁会话行，让并发请求按行锁串行
+            AiConversation::where('id', $conv->id)->lockForUpdate()->first();
+
+            $maxRound = (int) AiConversationMessage::where('conversation_id', $conv->id)->max('round_index');
+            $roundIndex = $maxRound + 1;
+
+            AiConversationMessage::createData([
+                'conversation_id' => $conv->id,
+                'round_index'     => $roundIndex,
+                'role'            => 'user',
+                'content'         => $content,
+            ]);
+
+            return $roundIndex;
+        });
     }
 
     private function recordUsage(

@@ -5,6 +5,8 @@
     "notFound": "The requested resource does not exist",
     "methodNotAllowed": "Request method not allowed",
     "requestTimeout": "Request timeout, please try again later",
+    "conflict": "Operation conflict, please retry later",
+    "tooManyRequests": "Too many requests, please slow down",
     "internalServerError": "Internal server error, please try again later",
     "badGateway": "Bad gateway error, please try again later",
     "serviceUnavailable": "Service temporarily unavailable, please try again later",
@@ -112,7 +114,7 @@
   "notice": {
     "title": "Notice",
     "btnRead": "Mark as read",
-    "bar": ["Notice", "Message", "Todo"],
+    "bar": ["Notice", "Announcement", "Todo"],
     "text": ["No"],
     "viewAll": "View all"
   },
@@ -302,6 +304,12 @@
       "systemLog": "System Log",
       "operationLog": "Operation Log",
       "file": "File Manage",
+      "notice": "Notice & Announcement",
+      "systemNotice": "System Notice",
+      "systemAnnouncement": "System Announcement",
+      "noticeSend": "Send Notice",
+      "announcementPublish": "Publish Announcement",
+      "myNotice": "My Messages",
       "nested": "Nested Menu",
       "menu1": "Menu 1",
       "menu2": "Menu 2",
@@ -322,6 +330,16 @@
     "plan": {
       "title": "Version Plan",
       "log": "Change Log"
+    },
+    "wechat": {
+      "title": "WeChat",
+      "manage": "Dashboard",
+      "user": "User Management",
+      "message": "Message Management",
+      "template": "Template Management",
+      "menu": "Menu Management",
+      "material": "Material Management",
+      "config": "Configuration"
     },
     "help": {
       "title": "Help Center",

@@ -35,6 +35,11 @@ Route::get('/swagger[/]', function () {
         : json(['code' => 404, 'msg' => 'swagger UI 未找到']);
 });
 
+// 微信回调接口（不需要经过 Admin 中间件）
+// 限定 GET (微信服务器签名校验) + POST (消息推送) 两种方法
+Route::add(['GET', 'POST'], '/wechat/callback', [\app\admin\controller\WeChatController::class, 'callback']);
+Route::add(['GET', 'POST'], '/wechat/mini/callback', [\app\admin\controller\WeChatController::class, 'miniCallback']);
+
 // 浏览器跨域预检（OPTIONS）兜底路由。
 // 注解路由只注册了 GET/POST/PUT/DELETE 等业务方法，OPTIONS 预检会落到 404 fallback，
 // 而 404 fallback 绕过中间件链，导致 Cors 中间件无法注入跨域头、预检失败。

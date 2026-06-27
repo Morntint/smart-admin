@@ -30,6 +30,15 @@ class FileService extends BaseService
         'image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp',
     ];
 
+    /** 永远拒绝的危险扩展名（不论配置如何） */
+    private const FORBIDDEN_EXTS = [
+        // 浏览器侧可执行脚本：会触发存储型 XSS（即便不在白名单内也兜底拒绝）
+        'svg', 'html', 'htm', 'xhtml', 'xml', 'js', 'mjs',
+        // 服务端可执行（极端情况下被 web server 误解释）
+        'php', 'phar', 'phtml', 'php3', 'php4', 'php5', 'php7',
+        'asp', 'aspx', 'jsp', 'cgi', 'pl',
+    ];
+
     /** 默认通用文件大小上限（MB） */
     private const DEFAULT_FILE_SIZE_MB = 10;
 
@@ -133,6 +142,11 @@ class FileService extends BaseService
         // 注意：必须用 getUploadExtension()（基于原始上传文件名），
         // 不能用 SplFileInfo::getExtension()——那取的是磁盘临时文件名，无扩展名恒为空。
         $ext = strtolower($file->getUploadExtension());
+        // 3.1 黑名单兜底：永远拒绝 svg / html / php 等可被浏览器或 web server 解释的扩展名，
+        //     即便管理员把 svg 加进了 upload_allowed_ext 也不放过（防存储型 XSS / 服务端解释漏洞）
+        if (in_array($ext, self::FORBIDDEN_EXTS, true)) {
+            throw new BusinessException('该文件类型不允许上传');
+        }
         if (!in_array($ext, $allowedExt, true)) {
             throw new BusinessException($isImage ? '只支持图片文件' : '不支持的文件类型');
         }
@@ -244,10 +258,17 @@ class FileService extends BaseService
 
     /**
      * 清理错误消息（脱敏处理，避免泄露绝对路径）。
+     *
+     * 旧实现 `\/[^\s]+` 把所有以斜杠开头的串都替换为 [path]，
+     * 会误伤合法 URL、中文路径等。收敛到：
+     *  - Windows 盘符路径 `C:\...`
+     *  - Unix 多段绝对路径 `/var/www/...`（至少 2 段，避免命中单段 URL）
      */
     private function sanitizeErrorMessage(string $message): string
     {
-        return preg_replace('/[a-zA-Z]:\\\\[^\s]+|\/[^\s]+/', '[path]', $message) ?? $message;
+        $message = preg_replace('/[a-zA-Z]:\\\\[^\\s,;:)\]>"\']+/', '[path]', $message) ?? $message;
+        $message = preg_replace('#/([a-zA-Z0-9_-]+/){2,}[a-zA-Z0-9_. -]+#', '/[path]', $message) ?? $message;
+        return $message;
     }
 
     /**

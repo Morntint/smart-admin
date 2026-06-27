@@ -11,7 +11,7 @@
  Target Server Version : 80012 (8.0.12)
  File Encoding         : 65001
 
- Date: 26/06/2026 17:40:43
+ Date: 27/06/2026 16:19:47
 */
 
 SET NAMES utf8mb4;
@@ -76,7 +76,7 @@ CREATE TABLE `ai_agent_tool_relation`  (
 -- ----------------------------
 -- Records of ai_agent_tool_relation
 -- ----------------------------
-INSERT INTO `ai_agent_tool_relation` VALUES (2, 1, 4, NULL, '2026-06-26 12:14:25', '2026-06-26 12:14:25');
+INSERT INTO `ai_agent_tool_relation` VALUES (2, 1, 6, NULL, '2026-06-27 18:00:00', '2026-06-27 18:00:00');
 
 -- ----------------------------
 -- Table structure for ai_conversation
@@ -97,11 +97,14 @@ CREATE TABLE `ai_conversation`  (
                                     INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
                                     INDEX `idx_agent_id`(`agent_id` ASC) USING BTREE,
                                     INDEX `idx_created_at`(`created_at` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'AI对话会话表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'AI对话会话表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of ai_conversation
 -- ----------------------------
+INSERT INTO `ai_conversation` VALUES (7, 1, 1, '你好', 1, 0, 0.000000, 1, '2026-06-26 21:27:18', '2026-06-27 14:08:03');
+INSERT INTO `ai_conversation` VALUES (8, 1, 1, '你好', 5, 0, 0.000000, 1, '2026-06-27 14:12:05', '2026-06-27 14:26:30');
+INSERT INTO `ai_conversation` VALUES (9, 1, 1, '帮我生成一段示例代码', 1, 0, 0.000000, 1, '2026-06-27 14:42:45', '2026-06-27 14:42:52');
 
 -- ----------------------------
 -- Table structure for ai_conversation_message
@@ -125,11 +128,25 @@ CREATE TABLE `ai_conversation_message`  (
                                             PRIMARY KEY (`id`) USING BTREE,
                                             INDEX `idx_conversation_id`(`conversation_id` ASC) USING BTREE,
                                             INDEX `idx_round_index`(`conversation_id` ASC, `round_index` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 43 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'AI对话消息表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 59 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'AI对话消息表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of ai_conversation_message
 -- ----------------------------
+INSERT INTO `ai_conversation_message` VALUES (45, 7, 1, 'user', '你好', NULL, NULL, NULL, NULL, 0.000000, 0, NULL, '2026-06-27 14:08:01', '2026-06-27 14:08:01');
+INSERT INTO `ai_conversation_message` VALUES (46, 7, 1, 'assistant', '你好！有什么我可以帮助你的吗？', NULL, NULL, NULL, '{\"total_tokens\": 0, \"prompt_tokens\": 0, \"completion_tokens\": 0}', 0.000000, 2187, 'qwen-max', '2026-06-27 14:08:03', '2026-06-27 14:08:03');
+INSERT INTO `ai_conversation_message` VALUES (47, 8, 1, 'user', '你好', NULL, NULL, NULL, NULL, 0.000000, 0, NULL, '2026-06-27 14:12:05', '2026-06-27 14:12:05');
+INSERT INTO `ai_conversation_message` VALUES (48, 8, 1, 'assistant', '你好！有什么我可以帮助你的吗？无论是关于Webman、PHP、Swoole、Docker、Linux、MySQL、Prometheus监控，还是前端、Python、Go相关的问题，都可以问我。', NULL, NULL, NULL, '{\"total_tokens\": 0, \"prompt_tokens\": 0, \"completion_tokens\": 0}', 0.000000, 2549, 'qwen-max', '2026-06-27 14:12:08', '2026-06-27 14:12:08');
+INSERT INTO `ai_conversation_message` VALUES (49, 8, 2, 'user', '你好', NULL, NULL, NULL, NULL, 0.000000, 0, NULL, '2026-06-27 14:20:50', '2026-06-27 14:20:50');
+INSERT INTO `ai_conversation_message` VALUES (50, 8, 2, 'assistant', '你好！请问有什么具体问题或需求吗？比如开发新功能、解决技术难题、性能优化等，我会尽力提供帮助。', NULL, NULL, NULL, '{\"total_tokens\": 0, \"prompt_tokens\": 0, \"completion_tokens\": 0}', 0.000000, 1793, 'qwen-max', '2026-06-27 14:20:52', '2026-06-27 14:20:52');
+INSERT INTO `ai_conversation_message` VALUES (51, 8, 3, 'user', '你好', NULL, NULL, NULL, NULL, 0.000000, 0, NULL, '2026-06-27 14:23:23', '2026-06-27 14:23:23');
+INSERT INTO `ai_conversation_message` VALUES (52, 8, 3, 'assistant', '你好！看起来你可能还没有具体的问题。如果你有关于项目开发、调试错误、性能优化或是任何技术栈相关的需求，随时可以告诉我。无论是Webman框架使用、PHP/Swoole编程、Docker容器化部署还是其他方面，我都在这里帮助你。请随时提出你的需求或问题。', NULL, NULL, NULL, '{\"total_tokens\": 0, \"prompt_tokens\": 0, \"completion_tokens\": 0}', 0.000000, 2458, 'qwen-max', '2026-06-27 14:23:25', '2026-06-27 14:23:25');
+INSERT INTO `ai_conversation_message` VALUES (53, 8, 4, 'user', '你好', NULL, NULL, NULL, NULL, 0.000000, 0, NULL, '2026-06-27 14:26:15', '2026-06-27 14:26:15');
+INSERT INTO `ai_conversation_message` VALUES (54, 8, 4, 'assistant', '你好！请告诉我你具体需要帮助的内容。无论是编写代码、解决技术问题，还是进行系统优化等，我都很乐意提供支持。如果有具体的项目或技术点想要讨论，请直接说明吧。', NULL, NULL, NULL, '{\"total_tokens\": 0, \"prompt_tokens\": 0, \"completion_tokens\": 0}', 0.000000, 2334, 'qwen-max', '2026-06-27 14:26:17', '2026-06-27 14:26:17');
+INSERT INTO `ai_conversation_message` VALUES (55, 8, 5, 'user', '你好', NULL, NULL, NULL, NULL, 0.000000, 0, NULL, '2026-06-27 14:26:29', '2026-06-27 14:26:29');
+INSERT INTO `ai_conversation_message` VALUES (56, 8, 5, 'assistant', '你好！看起来你可能还没有具体的问题。如果你有任何技术需求或问题，请直接告诉我，我会尽力帮助你。无论是开发新功能、修复bug、性能调优、数据库优化、容器部署还是监控分析，都可以详细说明一下。这样我可以更有效地提供帮助。', NULL, NULL, NULL, '{\"total_tokens\": 0, \"prompt_tokens\": 0, \"completion_tokens\": 0}', 0.000000, 1595, 'qwen-max', '2026-06-27 14:26:30', '2026-06-27 14:26:30');
+INSERT INTO `ai_conversation_message` VALUES (57, 9, 1, 'user', '帮我生成一段示例代码', NULL, NULL, NULL, NULL, 0.000000, 0, NULL, '2026-06-27 14:42:45', '2026-06-27 14:42:45');
+INSERT INTO `ai_conversation_message` VALUES (58, 9, 1, 'assistant', '当然可以帮助您，不过请您先明确一下需要哪种类型的示例代码？比如是Webman框架下的API接口、Swoole的WebSocket服务端、Dockerfile编写、MySQL数据库操作脚本、Prometheus监控配置、前端页面代码、Python脚本还是Go语言程序等。另外，请告知具体的功能需求或业务场景，这样我能更准确地提供帮助。', NULL, NULL, NULL, '{\"total_tokens\": 0, \"prompt_tokens\": 0, \"completion_tokens\": 0}', 0.000000, 6386, 'qwen-max', '2026-06-27 14:42:51', '2026-06-27 14:42:51');
 
 -- ----------------------------
 -- Table structure for ai_document_chunk
@@ -306,13 +323,12 @@ CREATE TABLE `ai_tool`  (
                             UNIQUE INDEX `uk_code`(`code` ASC) USING BTREE,
                             INDEX `idx_status`(`status` ASC) USING BTREE,
                             INDEX `idx_created_by`(`created_by` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'AI工具库表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'AI工具库表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of ai_tool
 -- ----------------------------
-INSERT INTO `ai_tool` VALUES (4, '查询操作日志', 'query_operation_logs', '查询系统操作日志，支持按模块、请求方法、状态、日期范围等条件过滤，以及关键词搜索和分页', 'function', '{\"type\": \"object\", \"properties\": {\"page\": {\"type\": \"integer\", \"description\": \"页码，默认 1\"}, \"limit\": {\"type\": \"integer\", \"description\": \"每页条数，默认 15，最大 50\"}, \"method\": {\"enum\": [\"GET\", \"POST\", \"PUT\", \"PATCH\", \"DELETE\"], \"type\": \"string\", \"description\": \"HTTP 请求方法过滤\"}, \"module\": {\"type\": \"string\", \"description\": \"模块名称过滤\"}, \"status\": {\"enum\": [\"0\", \"1\"], \"type\": \"string\", \"description\": \"状态：0=异常, 1=正常\"}, \"keyword\": {\"type\": \"string\", \"description\": \"搜索关键词（匹配用户名/URL）\"}, \"end_date\": {\"type\": \"string\", \"description\": \"结束日期（Y-m-d 格式）\"}, \"start_date\": {\"type\": \"string\", \"description\": \"开始日期（Y-m-d 格式）\"}}}', 'app\\admin\\service\\ai\\tools\\QueryLogTool@queryOperationLogs', '{}', 1, 4, NULL, NULL, '2026-06-26 12:13:09', '2026-06-26 12:13:41');
-INSERT INTO `ai_tool` VALUES (5, '查询登录日志', 'query_login_logs', '查询系统登录日志，支持按类型、状态、日期范围等条件过滤，以及关键词搜索和分页', 'function', '{\"type\": \"object\", \"properties\": {\"page\": {\"type\": \"integer\", \"description\": \"页码，默认 1\"}, \"limit\": {\"type\": \"integer\", \"description\": \"每页条数，默认 15，最大 50\"}, \"status\": {\"enum\": [\"0\", \"1\"], \"type\": \"string\", \"description\": \"状态：0=失败, 1=成功\"}, \"keyword\": {\"type\": \"string\", \"description\": \"搜索关键词（匹配用户名）\"}, \"end_date\": {\"type\": \"string\", \"description\": \"结束日期（Y-m-d 格式）\"}, \"login_type\": {\"enum\": [\"1\", \"2\"], \"type\": \"string\", \"description\": \"类型：1=登录, 2=登出\"}, \"start_date\": {\"type\": \"string\", \"description\": \"开始日期（Y-m-d 格式）\"}}}', 'app\\admin\\service\\ai\\tools\\QueryLogTool@queryLoginLogs', '{}', 1, 5, NULL, NULL, '2026-06-26 12:13:09', '2026-06-26 12:13:56');
+INSERT INTO `ai_tool` VALUES (6, '数据查询', 'query_database', '使用结构化 DSL 查询业务数据库（表/字段/操作符全部白名单限制，禁止裸 SQL）。可查询的表与字段、相对日期约定由 system prompt 自动注入；调用时仅需给出 table/filters/order_by/limit/aggregations/group_by。', 'function', '{\"type\": \"object\", \"required\": [\"table\"], \"properties\": {\"table\": {\"type\": \"string\", \"description\": \"要查询的表名（必须是白名单内的表）\"}, \"fields\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}, \"description\": \"要返回的字段，省略则返回该表所有可见字段；与 aggregations 互斥\"}, \"filters\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"required\": [\"field\", \"op\"], \"properties\": {\"field\": {\"type\": \"string\"}, \"op\": {\"type\": \"string\", \"enum\": [\"=\", \"!=\", \">\", \">=\", \"<\", \"<=\", \"like\", \"in\", \"between\", \"is_null\", \"is_not_null\"]}, \"value\": {}}}, \"description\": \"过滤条件列表（AND 关系），最多 10 条\"}, \"order_by\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"required\": [\"field\"], \"properties\": {\"field\": {\"type\": \"string\"}, \"direction\": {\"type\": \"string\", \"enum\": [\"asc\", \"desc\"]}}}}, \"limit\": {\"type\": \"integer\", \"minimum\": 1, \"maximum\": 200}, \"offset\": {\"type\": \"integer\", \"minimum\": 0}, \"aggregations\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"required\": [\"fn\"], \"properties\": {\"fn\": {\"type\": \"string\", \"enum\": [\"count\", \"sum\", \"avg\", \"max\", \"min\"]}, \"field\": {\"type\": \"string\"}, \"alias\": {\"type\": \"string\"}}}, \"description\": \"聚合查询；指定后建议同时给 group_by\"}, \"group_by\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}}}}', 'app\\admin\\service\\ai\\tools\\NL2SqlTool@execute', '{}', 1, 1, NULL, NULL, '2026-06-27 18:00:00', '2026-06-27 18:00:00');
 
 -- ----------------------------
 -- Table structure for ai_usage_record
@@ -337,11 +353,59 @@ CREATE TABLE `ai_usage_record`  (
                                     INDEX `idx_agent_id`(`agent_id` ASC) USING BTREE,
                                     INDEX `idx_created_at`(`created_at` ASC) USING BTREE,
                                     INDEX `idx_model_name`(`model_name` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'AI用量统计表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 25 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'AI用量统计表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of ai_usage_record
 -- ----------------------------
+INSERT INTO `ai_usage_record` VALUES (17, 1, 1, 'qwen-max', 0, 0, 0, 0.000000, 'chat', 3475, 1, NULL, '2026-06-26 17:58:34');
+INSERT INTO `ai_usage_record` VALUES (18, 1, 1, 'qwen-max', 0, 0, 0, 0.000000, 'chat', 2187, 1, NULL, '2026-06-27 14:08:03');
+INSERT INTO `ai_usage_record` VALUES (19, 1, 1, 'qwen-max', 0, 0, 0, 0.000000, 'chat', 2549, 1, NULL, '2026-06-27 14:12:08');
+INSERT INTO `ai_usage_record` VALUES (20, 1, 1, 'qwen-max', 0, 0, 0, 0.000000, 'chat', 1793, 1, NULL, '2026-06-27 14:20:52');
+INSERT INTO `ai_usage_record` VALUES (21, 1, 1, 'qwen-max', 0, 0, 0, 0.000000, 'chat', 2458, 1, NULL, '2026-06-27 14:23:25');
+INSERT INTO `ai_usage_record` VALUES (22, 1, 1, 'qwen-max', 0, 0, 0, 0.000000, 'chat', 2334, 1, NULL, '2026-06-27 14:26:17');
+INSERT INTO `ai_usage_record` VALUES (23, 1, 1, 'qwen-max', 0, 0, 0, 0.000000, 'chat', 1595, 1, NULL, '2026-06-27 14:26:30');
+INSERT INTO `ai_usage_record` VALUES (24, 1, 1, 'qwen-max', 0, 0, 0, 0.000000, 'chat', 6386, 1, NULL, '2026-06-27 14:42:52');
+
+-- ----------------------------
+-- Table structure for sys_announcement
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_announcement`;
+CREATE TABLE `sys_announcement`  (
+                                     `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '公告ID',
+                                     `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '公告标题',
+                                     `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '公告内容(支持富文本)',
+                                     `category` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'notice' COMMENT '分类: notice通知/announcement公告/activity活动/maintenance维护',
+                                     `level` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'info' COMMENT '级别: info普通/important重要/urgent紧急',
+                                     `is_top` tinyint(3) UNSIGNED NOT NULL DEFAULT 0 COMMENT '是否置顶: 0=否, 1=是',
+                                     `is_popup` tinyint(3) UNSIGNED NOT NULL DEFAULT 0 COMMENT '是否弹窗强提示: 0=否, 1=是',
+                                     `status` tinyint(3) UNSIGNED NOT NULL DEFAULT 0 COMMENT '状态: 0=草稿, 1=已发布, 2=已下线',
+                                     `publisher_id` bigint(20) UNSIGNED NULL DEFAULT NULL COMMENT '发布人ID',
+                                     `published_at` datetime NULL DEFAULT NULL COMMENT '发布时间',
+                                     `effective_at` datetime NULL DEFAULT NULL COMMENT '生效时间',
+                                     `expire_at` datetime NULL DEFAULT NULL COMMENT '失效时间(为空则长期有效)',
+                                     `view_count` int(10) UNSIGNED NOT NULL DEFAULT 0 COMMENT '阅读量',
+                                     `sort` int(10) UNSIGNED NOT NULL DEFAULT 0 COMMENT '显示顺序',
+                                     `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '备注',
+                                     `created_by` bigint(20) UNSIGNED NULL DEFAULT NULL COMMENT '创建者',
+                                     `created_at` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                     `updated_by` bigint(20) UNSIGNED NULL DEFAULT NULL COMMENT '更新者',
+                                     `updated_at` datetime NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                                     `deleted_at` datetime NULL DEFAULT NULL COMMENT '删除时间',
+                                     PRIMARY KEY (`id`) USING BTREE,
+                                     INDEX `idx_status`(`status` ASC) USING BTREE,
+                                     INDEX `idx_category`(`category` ASC) USING BTREE,
+                                     INDEX `idx_is_top`(`is_top` ASC) USING BTREE,
+                                     INDEX `idx_published_at`(`published_at` ASC) USING BTREE,
+                                     INDEX `idx_effective`(`effective_at` ASC, `expire_at` ASC) USING BTREE,
+                                     INDEX `idx_publisher_id`(`publisher_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统公告表(全员可见的公告)' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of sys_announcement
+-- ----------------------------
+INSERT INTO `sys_announcement` VALUES (1, '测试公告', '<p>1111asdsadas</p>', 'announcement', 'info', 1, 1, 1, 1, '2026-06-27 10:48:05', NULL, NULL, 0, 0, NULL, 1, '2026-06-27 10:48:05', 1, '2026-06-27 13:09:32', '2026-06-27 13:09:32');
+INSERT INTO `sys_announcement` VALUES (2, '测试公告..', '<p>asddddasd</p>', 'announcement', 'info', 1, 1, 1, 1, '2026-06-27 13:01:34', NULL, NULL, 0, 0, NULL, 1, '2026-06-27 13:01:34', 1, '2026-06-27 13:10:14', NULL);
 
 -- ----------------------------
 -- Table structure for sys_config
@@ -364,7 +428,7 @@ CREATE TABLE `sys_config`  (
                                PRIMARY KEY (`id`) USING BTREE,
                                UNIQUE INDEX `uk_key`(`key` ASC) USING BTREE,
                                INDEX `idx_group`(`group` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统配置表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 146 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统配置表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_config
@@ -376,6 +440,30 @@ INSERT INTO `sys_config` VALUES (4, '版权信息', 'sys_copyright', '© 2024 Co
 INSERT INTO `sys_config` VALUES (5, '文件上传大小限制', 'upload_file_size', '10', 'number', 'upload', NULL, 1, '单位: MB', NULL, '2026-04-23 18:28:31', NULL, NULL);
 INSERT INTO `sys_config` VALUES (6, '图片上传大小限制', 'upload_image_size', '5', 'number', 'upload', NULL, 2, '单位: MB', NULL, '2026-04-23 18:28:31', NULL, NULL);
 INSERT INTO `sys_config` VALUES (7, '允许上传的文件类型', 'upload_allowed_ext', 'jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,zip', 'string', 'upload', NULL, 3, '文件扩展名', NULL, '2026-04-23 18:28:31', 1, '2026-06-21 20:37:17');
+INSERT INTO `sys_config` VALUES (100, '公众号AppID', 'wechat_official_appid', '', 'string', 'wechat', NULL, 1, '微信公众号开发者ID', NULL, '2026-06-27 15:53:44', NULL, NULL);
+INSERT INTO `sys_config` VALUES (101, '公众号AppSecret', 'wechat_official_secret', '', 'string', 'wechat', NULL, 2, '微信公众号开发者密钥', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (102, '公众号Token', 'wechat_official_token', '', 'string', 'wechat', NULL, 3, '微信公众号服务器配置令牌', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (103, '公众号EncodingAESKey', 'wechat_official_aes_key', '', 'string', 'wechat', NULL, 4, '微信公众号消息加解密密钥', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (110, '小程序AppID', 'wechat_mini_appid', '', 'string', 'wechat', NULL, 11, '微信小程序开发者ID', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (111, '小程序AppSecret', 'wechat_mini_secret', '', 'string', 'wechat', NULL, 12, '微信小程序开发者密钥', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (112, '小程序Token', 'wechat_mini_token', '', 'string', 'wechat', NULL, 13, '微信小程序服务器配置令牌', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (113, '小程序EncodingAESKey', 'wechat_mini_aes_key', '', 'string', 'wechat', NULL, 14, '微信小程序消息加解密密钥', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (120, '开放平台AppID', 'wechat_open_appid', '', 'string', 'wechat', NULL, 21, '微信开放平台开发者ID', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (121, '开放平台AppSecret', 'wechat_open_secret', '', 'string', 'wechat', NULL, 22, '微信开放平台开发者密钥', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (122, '开放平台Token', 'wechat_open_token', '', 'string', 'wechat', NULL, 23, '微信开放平台服务器配置令牌', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (123, '开放平台EncodingAESKey', 'wechat_open_aes_key', '', 'string', 'wechat', NULL, 24, '微信开放平台消息加解密密钥', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (130, '企业微信CorpID', 'wechat_work_corp_id', '', 'string', 'wechat', NULL, 31, '企业微信企业ID', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (131, '企业微信AgentID', 'wechat_work_agent_id', '', 'string', 'wechat', NULL, 32, '企业微信应用AgentID', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (132, '企业微信Secret', 'wechat_work_secret', '', 'string', 'wechat', NULL, 33, '企业微信应用密钥', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (133, '企业微信Token', 'wechat_work_token', '', 'string', 'wechat', NULL, 34, '企业微信服务器配置令牌', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (134, '企业微信EncodingAESKey', 'wechat_work_aes_key', '', 'string', 'wechat', NULL, 35, '企业微信消息加解密密钥', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (140, '微信支付AppID', 'wechat_pay_appid', '', 'string', 'wechat', NULL, 41, '微信支付绑定的AppID', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (141, '微信支付商户号', 'wechat_pay_mch_id', '', 'string', 'wechat', NULL, 42, '微信支付商户号', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (142, '微信支付APIv2密钥', 'wechat_pay_secret_key', '', 'string', 'wechat', NULL, 43, '微信支付 APIv2 key（部分旧接口仍需）', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (143, '微信支付APIv3密钥', 'wechat_pay_v3_key', '', 'string', 'wechat', NULL, 44, '微信支付 APIv3 key', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (144, '微信支付商户私钥', 'wechat_pay_private_key', '', 'string', 'wechat', NULL, 45, '商户私钥（推荐填写文件绝对路径，apiclient_key.pem）', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (145, '微信支付商户证书', 'wechat_pay_certificate', '', 'string', 'wechat', NULL, 46, '商户证书（推荐填写文件绝对路径，apiclient_cert.pem）', NULL, '2026-06-27 15:53:45', NULL, NULL);
+INSERT INTO `sys_config` VALUES (146, '微信支付回调地址', 'wechat_pay_notify_url', '', 'string', 'wechat', NULL, 47, '微信支付异步通知回调URL', NULL, '2026-06-27 15:53:45', NULL, NULL);
 
 -- ----------------------------
 -- Table structure for sys_department
@@ -539,7 +627,7 @@ CREATE TABLE `sys_login_log`  (
                                   INDEX `idx_username`(`username` ASC) USING BTREE,
                                   INDEX `idx_status`(`status` ASC) USING BTREE,
                                   INDEX `idx_created_at`(`created_at` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 58 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统登录日志表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 65 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统登录日志表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_login_log
@@ -601,6 +689,13 @@ INSERT INTO `sys_login_log` VALUES (54, 1, 'admin', 1, '172.18.0.1', NULL, 'Mozi
 INSERT INTO `sys_login_log` VALUES (55, 1, 'admin', 1, '172.18.0.1', NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, '登录成功', '2026-06-26 07:35:21');
 INSERT INTO `sys_login_log` VALUES (56, 1, 'admin', 1, '172.18.0.1', NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, '登录成功', '2026-06-26 11:48:16');
 INSERT INTO `sys_login_log` VALUES (57, 1, 'admin', 1, '172.18.0.1', NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, '登录成功', '2026-06-26 17:39:54');
+INSERT INTO `sys_login_log` VALUES (58, 1, 'admin', 1, '172.18.0.1', NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, '登录成功', '2026-06-26 21:13:48');
+INSERT INTO `sys_login_log` VALUES (59, 1, 'admin', 1, '172.18.0.1', NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, '登录成功', '2026-06-26 23:16:57');
+INSERT INTO `sys_login_log` VALUES (60, 1, 'admin', 1, '172.18.0.1', NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, '登录成功', '2026-06-27 01:38:19');
+INSERT INTO `sys_login_log` VALUES (61, 1, 'admin', 1, '172.18.0.1', NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, '登录成功', '2026-06-27 09:22:39');
+INSERT INTO `sys_login_log` VALUES (62, 1, 'admin', 1, '172.18.0.1', NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, '登录成功', '2026-06-27 12:56:00');
+INSERT INTO `sys_login_log` VALUES (63, 1, 'admin', 1, '172.18.0.1', NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, '登录成功', '2026-06-27 13:00:20');
+INSERT INTO `sys_login_log` VALUES (64, 1, 'admin', 1, '172.18.0.1', NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, '登录成功', '2026-06-27 14:44:04');
 
 -- ----------------------------
 -- Table structure for sys_menu
@@ -637,7 +732,7 @@ CREATE TABLE `sys_menu`  (
                              INDEX `idx_parent_id`(`parent_id` ASC) USING BTREE,
                              INDEX `idx_type`(`type` ASC) USING BTREE,
                              INDEX `idx_status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1047 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统菜单表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1049 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统菜单表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_menu
@@ -651,35 +746,49 @@ INSERT INTO `sys_menu` VALUES (101, 1, '系统配置', 'Config', 'ri:settings-4-
 INSERT INTO `sys_menu` VALUES (102, 1, '字典管理', 'Dict', 'ri:book-marked-line', 'dict', '/system/dict', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 2, '', 1, '', NULL, '2026-04-23 18:28:31', 1, '2026-06-23 02:56:46', NULL);
 INSERT INTO `sys_menu` VALUES (103, 1, '操作日志', 'Log', 'ri:file-list-3-line', 'log', '/system/log', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 2, '', 1, NULL, NULL, '2026-04-23 18:28:31', NULL, '2026-06-23 02:57:28', NULL);
 INSERT INTO `sys_menu` VALUES (104, 1, '文件管理', 'File', 'ri:folder-shield-2-line', 'file', '/system/file', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 4, 2, NULL, 1, NULL, NULL, '2026-06-18 14:49:49', NULL, '2026-06-23 02:57:33', NULL);
-INSERT INTO `sys_menu` VALUES (200, 0, 'AI 智能', 'AI', 'ri:cpu-line', '/ai', '/index/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 6, 1, 'AI', 1, '', NULL, '2026-06-25 18:18:36', 1, '2026-06-26 09:48:15', NULL);
+INSERT INTO `sys_menu` VALUES (110, 1, '通知公告', 'Notice', 'ri:notification-3-line', 'notice', '', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 10, 1, '', 1, '', 1, '2026-06-26 22:55:00', 1, '2026-06-27 11:15:58', NULL);
+INSERT INTO `sys_menu` VALUES (111, 110, '系统通知', 'SystemNotice', 'ri:mail-line', 'system-notice', '/system/notice/system', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 2, '', 1, '', 1, '2026-06-26 22:55:00', 1, '2026-06-27 09:58:36', NULL);
+INSERT INTO `sys_menu` VALUES (112, 110, '系统公告', 'SystemAnnouncement', 'ri:volume-up-line', 'system-announcement', '/system/notice/announcement', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 2, '', 1, '', 1, '2026-06-26 22:55:00', 1, '2026-06-26 22:55:00', NULL);
+INSERT INTO `sys_menu` VALUES (113, 111, '通知查询', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'system:notice:list', 1, NULL, 1, '2026-06-26 22:55:00', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (114, 111, '通知发送', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'system:notice:add', 1, NULL, 1, '2026-06-26 22:55:00', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (115, 111, '通知编辑', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 3, 'system:notice:edit', 1, NULL, 1, '2026-06-26 22:55:00', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (116, 111, '通知删除', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 4, 3, 'system:notice:del', 1, NULL, 1, '2026-06-26 22:55:00', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (117, 111, '标记已读', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 5, 3, 'system:notice:read', 1, NULL, 1, '2026-06-26 22:55:00', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (118, 112, '公告查询', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'system:announcement:list', 1, NULL, 1, '2026-06-26 22:55:00', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (119, 112, '公告新增', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'system:announcement:add', 1, NULL, 1, '2026-06-26 22:55:00', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (120, 112, '公告编辑', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 3, 'system:announcement:edit', 1, NULL, 1, '2026-06-26 22:55:00', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (121, 112, '公告删除', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 4, 3, 'system:announcement:del', 1, NULL, 1, '2026-06-26 22:55:00', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (122, 112, '公告发布', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 5, 3, 'system:announcement:publish', 1, NULL, 1, '2026-06-26 22:55:00', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (125, 1, '用户中心', 'UserCenter', 'ri:user-line', 'user-center', '/system/user-center', '', 0, 0, 0, 0, 0, 0, 0, NULL, 7, 2, '', 1, NULL, 1, '2026-06-27 09:25:04', 1, '2026-06-27 09:25:04', NULL);
+INSERT INTO `sys_menu` VALUES (200, 0, 'AI 智能', 'AI', 'ri:cpu-line', '/ai', '/index/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 6, 1, '', 1, '', NULL, '2026-06-25 18:18:36', 1, '2026-06-27 09:56:01', NULL);
 INSERT INTO `sys_menu` VALUES (201, 2, '用户查询', NULL, '', '', '', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'system:user:list', 1, NULL, NULL, '2026-04-23 18:28:31', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (202, 2, '用户新增', NULL, '', '', '', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'system:user:add', 1, NULL, NULL, '2026-04-23 18:28:31', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (203, 2, '用户编辑', NULL, '', '', '', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 3, 'system:user:edit', 1, NULL, NULL, '2026-04-23 18:28:31', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (204, 2, '用户删除', NULL, '', '', '', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 4, 3, 'system:user:del', 1, NULL, NULL, '2026-04-23 18:28:31', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (205, 2, '重置密码', NULL, '', '', '', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 5, 3, 'system:user:resetPwd', 1, NULL, NULL, '2026-04-23 18:28:31', NULL, NULL, NULL);
-INSERT INTO `sys_menu` VALUES (210, 200, '对话工作台', 'AIChat', 'ri:chat-ai-line', 'chat', '/ai/chat/index', NULL, 0, 1, 1, 0, 0, 0, 0, NULL, 1, 2, 'AIChat', 1, '', NULL, '2026-06-25 18:18:36', 1, '2026-06-26 09:40:19', NULL);
-INSERT INTO `sys_menu` VALUES (220, 200, 'Agent 管理', 'AIAgent', 'ri:robot-2-line', 'agent', '/ai/agent/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 2, 'AIAgent', 1, '', NULL, '2026-06-25 18:18:36', 1, '2026-06-26 09:47:28', NULL);
+INSERT INTO `sys_menu` VALUES (210, 200, '对话工作台', 'AIChat', 'ri:chat-ai-line', 'chat', '/ai/chat/index', NULL, 0, 1, 1, 0, 0, 0, 0, NULL, 1, 2, '', 1, '', NULL, '2026-06-25 18:18:36', 1, '2026-06-27 09:56:13', NULL);
+INSERT INTO `sys_menu` VALUES (220, 200, 'Agent 管理', 'AIAgent', 'ri:robot-2-line', 'agent', '/ai/agent/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 2, '', 1, '', NULL, '2026-06-25 18:18:36', 1, '2026-06-27 09:56:09', NULL);
 INSERT INTO `sys_menu` VALUES (221, 220, 'Agent 新增', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'ai:agent:create', 1, NULL, NULL, '2026-06-25 18:18:36', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (222, 220, 'Agent 编辑', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'ai:agent:update', 1, NULL, NULL, '2026-06-25 18:18:36', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (223, 220, 'Agent 删除', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 3, 'ai:agent:delete', 1, NULL, NULL, '2026-06-25 18:18:36', NULL, NULL, NULL);
-INSERT INTO `sys_menu` VALUES (224, 200, '工具库', 'AIAgentTool', 'ri:tools-fill', 'agent-tool', '/ai/agent-tool/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 2, 'AIAgentTool', 1, '', NULL, '2026-06-25 20:50:58', 1, '2026-06-26 09:41:26', NULL);
+INSERT INTO `sys_menu` VALUES (224, 200, '工具库', 'AIAgentTool', 'ri:tools-fill', 'agent-tool', '/ai/agent-tool/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 2, '', 1, '', NULL, '2026-06-25 20:50:58', 1, '2026-06-27 09:56:34', NULL);
 INSERT INTO `sys_menu` VALUES (225, 224, '工具新增', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'ai:tool:create', 1, NULL, NULL, '2026-06-25 20:50:58', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (226, 224, '工具编辑', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'ai:tool:update', 1, NULL, NULL, '2026-06-25 20:50:58', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (227, 224, '工具删除', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 3, 'ai:tool:delete', 1, NULL, NULL, '2026-06-25 20:50:58', NULL, NULL, NULL);
-INSERT INTO `sys_menu` VALUES (230, 200, '模型管理', 'AIModel', 'ri:brain-ai-3-line', 'model', '/ai/model/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 2, 'AIModel', 1, '', NULL, '2026-06-25 18:18:36', 1, '2026-06-26 09:41:57', NULL);
+INSERT INTO `sys_menu` VALUES (230, 200, '模型管理', 'AIModel', 'ri:brain-ai-3-line', 'model', '/ai/model/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 2, '', 1, '', NULL, '2026-06-25 18:18:36', 1, '2026-06-27 09:56:10', NULL);
 INSERT INTO `sys_menu` VALUES (231, 230, '模型新增', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'ai:model:create', 1, NULL, NULL, '2026-06-25 18:18:36', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (232, 230, '模型编辑', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'ai:model:update', 1, NULL, NULL, '2026-06-25 18:18:36', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (233, 230, '模型删除', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 3, 'ai:model:delete', 1, NULL, NULL, '2026-06-25 18:18:36', NULL, NULL, NULL);
-INSERT INTO `sys_menu` VALUES (240, 200, '知识库', 'AIKnowledge', 'ri:file-text-line', 'knowledge', '/ai/knowledge/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 4, 2, 'AIKnowledge', 1, '', NULL, '2026-06-25 18:18:36', 1, '2026-06-26 09:44:30', NULL);
+INSERT INTO `sys_menu` VALUES (240, 200, '知识库', 'AIKnowledge', 'ri:file-text-line', 'knowledge', '/ai/knowledge/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 4, 2, '', 1, '', NULL, '2026-06-25 18:18:36', 1, '2026-06-27 09:56:14', NULL);
 INSERT INTO `sys_menu` VALUES (241, 240, '知识库新增', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'ai:knowledge:create', 1, NULL, NULL, '2026-06-25 18:18:36', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (242, 240, '知识库编辑', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'ai:knowledge:update', 1, NULL, NULL, '2026-06-25 18:18:36', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (243, 240, '知识库删除', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 3, 'ai:knowledge:delete', 1, NULL, NULL, '2026-06-25 18:18:36', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (244, 240, '文档上传', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 4, 3, 'ai:knowledge:upload', 1, NULL, NULL, '2026-06-25 18:18:36', NULL, NULL, NULL);
-INSERT INTO `sys_menu` VALUES (250, 200, '提示词管理', 'AIPrompt', 'ri:pencil-ai-line', 'prompt', '/ai/prompt/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 5, 2, 'AIPrompt', 1, '', NULL, '2026-06-25 18:18:36', 1, '2026-06-26 09:43:55', NULL);
+INSERT INTO `sys_menu` VALUES (250, 200, '提示词管理', 'AIPrompt', 'ri:pencil-ai-line', 'prompt', '/ai/prompt/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 5, 2, '', 1, '', NULL, '2026-06-25 18:18:36', 1, '2026-06-27 09:56:19', NULL);
 INSERT INTO `sys_menu` VALUES (251, 250, '提示词新增', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'ai:prompt:create', 1, NULL, NULL, '2026-06-25 18:18:36', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (252, 250, '提示词编辑', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'ai:prompt:update', 1, NULL, NULL, '2026-06-25 18:18:36', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (253, 250, '提示词删除', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 3, 'ai:prompt:delete', 1, NULL, NULL, '2026-06-25 18:18:36', NULL, NULL, NULL);
-INSERT INTO `sys_menu` VALUES (260, 200, '用量统计', 'AIUsage', 'ri:bar-chart-2-line', 'usage', '/ai/usage/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 6, 2, 'AIUsage', 1, '', NULL, '2026-06-25 18:18:36', 1, '2026-06-26 09:46:30', NULL);
+INSERT INTO `sys_menu` VALUES (260, 200, '用量统计', 'AIUsage', 'ri:bar-chart-2-line', 'usage', '/ai/usage/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 6, 2, '', 1, '', NULL, '2026-06-25 18:18:36', 1, '2026-06-27 09:56:21', NULL);
 INSERT INTO `sys_menu` VALUES (301, 3, '角色查询', NULL, '', '', '', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'system:role:list', 1, NULL, NULL, '2026-04-23 18:28:31', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (302, 3, '角色新增', NULL, '', '', '', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'system:role:add', 1, NULL, NULL, '2026-04-23 18:28:31', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (303, 3, '角色编辑', NULL, '', '', '', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 3, 'system:role:edit', 1, NULL, NULL, '2026-04-23 18:28:31', NULL, NULL, NULL);
@@ -694,6 +803,24 @@ INSERT INTO `sys_menu` VALUES (501, 5, '部门查询', NULL, NULL, NULL, NULL, N
 INSERT INTO `sys_menu` VALUES (502, 5, '部门新增', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'system:dept:add', 1, NULL, NULL, '2026-06-22 19:02:30', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (503, 5, '部门编辑', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 3, 'system:dept:edit', 1, NULL, NULL, '2026-06-22 19:02:30', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (504, 5, '部门删除', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 4, 3, 'system:dept:del', 1, NULL, NULL, '2026-06-22 19:02:30', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (600, 0, '微信管理', NULL, 'ri:wechat-2-line', '/wechat', '/index/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 80, 1, NULL, 1, NULL, NULL, '2026-06-27 15:21:35', NULL, '2026-06-27 15:22:14', NULL);
+INSERT INTO `sys_menu` VALUES (601, 600, '配置管理', NULL, 'ri:settings-3-line', 'manage', '/wechat/config/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 2, 'wechat:config:list', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, '2026-06-27 15:55:48', NULL);
+INSERT INTO `sys_menu` VALUES (602, 600, '用户管理', NULL, 'ri:user-line', 'wechat-user', '/wechat/user/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 2, 'wechat:user:list', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, '2026-06-27 15:43:46', NULL);
+INSERT INTO `sys_menu` VALUES (603, 602, '同步用户', NULL, '', '', NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'wechat:user:sync', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (604, 600, '消息管理', NULL, 'ri:message-2-line', 'message', '/wechat/message/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 2, 'wechat:message:list', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, '2026-06-27 15:42:12', NULL);
+INSERT INTO `sys_menu` VALUES (605, 604, '发送消息', NULL, '', '', NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'wechat:message:send', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (606, 600, '模板管理', NULL, 'ri:file-text-line', 'template', '/wechat/template/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 4, 2, 'wechat:template:list', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, '2026-06-27 15:42:00', NULL);
+INSERT INTO `sys_menu` VALUES (607, 606, '同步模板', NULL, '', '', NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'wechat:template:sync', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (608, 600, '菜单管理', NULL, 'ri:menu-line', 'wechat-menu', '/wechat/menu/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 5, 2, 'wechat:menu:list', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, '2026-06-27 15:43:42', NULL);
+INSERT INTO `sys_menu` VALUES (609, 608, '发布菜单', NULL, '', '', NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'wechat:menu:publish', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (610, 600, '素材管理', NULL, 'ri:image-line', 'material', '/wechat/material/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 6, 2, 'wechat:material:list', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, '2026-06-27 15:42:22', NULL);
+INSERT INTO `sys_menu` VALUES (611, 610, '同步素材', NULL, '', '', NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'wechat:material:sync', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (612, 601, '配置编辑', NULL, '', '', NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'wechat:config:edit', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (613, 601, '查看密钥', NULL, '', '', NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 3, 'wechat:config:view-secret', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (614, 608, '菜单编辑', NULL, '', '', NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'wechat:menu:edit', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (615, 610, '删除素材', NULL, '', '', NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'wechat:material:del', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (616, 600, 'JSSDK 配置', NULL, '', '', NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 90, 3, 'wechat:jssdk:view', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (617, 600, '小程序码', NULL, '', '', NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 91, 3, 'wechat:mini:qrcode', 1, NULL, NULL, '2026-06-27 15:21:35', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (1011, 101, '配置查询', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'system:config:list', 1, NULL, NULL, '2026-06-22 19:02:30', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (1012, 101, '配置新增', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'system:config:add', 1, NULL, NULL, '2026-06-22 19:02:30', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (1013, 101, '配置编辑', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 3, 3, 'system:config:edit', 1, NULL, NULL, '2026-06-22 19:02:30', NULL, NULL, NULL);
@@ -706,8 +833,46 @@ INSERT INTO `sys_menu` VALUES (1031, 103, '操作日志查询', NULL, NULL, NULL
 INSERT INTO `sys_menu` VALUES (1032, 103, '操作日志删除', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'system:log:operationDel', 1, NULL, NULL, '2026-06-22 19:02:30', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (1041, 104, '登录日志查询', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 3, 'system:log:loginList', 1, NULL, NULL, '2026-06-22 19:02:30', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (1042, 104, '登录日志删除', NULL, NULL, NULL, NULL, NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 2, 3, 'system:log:loginDel', 1, NULL, NULL, '2026-06-22 19:02:30', NULL, NULL, NULL);
-INSERT INTO `sys_menu` VALUES (1044, 0, '仪表盘', 'Dashboard', 'ri:pie-chart-line', '/dashboard', '/index/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 1, 'Dashboard', 1, '', 1, '2026-06-22 19:52:11', 1, '2026-06-23 23:20:16', NULL);
+INSERT INTO `sys_menu` VALUES (1044, 0, '仪表盘', 'Dashboard', 'ri:pie-chart-line', '/dashboard', '/index/index', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 1, '', 1, '', 1, '2026-06-22 19:52:11', 1, '2026-06-27 09:56:26', NULL);
 INSERT INTO `sys_menu` VALUES (1045, 1044, '工作台', 'Console', 'ri:home-smile-2-line', 'console', '/dashboard/console', NULL, 0, 0, 1, 0, 0, 0, 0, NULL, 1, 2, '', 1, '', 1, '2026-06-22 19:59:53', 1, '2026-06-23 02:55:00', NULL);
+INSERT INTO `sys_menu` VALUES (1048, 110, '通知收件箱', 'NoticeInbox', '', 'notice-inbox', '/system/notice/notice-inbox', NULL, 0, 0, 0, 0, 0, 0, 0, NULL, 1, 2, 'NoticeInbox', 1, '', 1, '2026-06-27 11:53:42', NULL, '2026-06-27 11:53:42', NULL);
+
+-- ----------------------------
+-- Table structure for sys_notice
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_notice`;
+CREATE TABLE `sys_notice`  (
+                               `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '通知ID',
+                               `user_id` bigint(20) UNSIGNED NOT NULL COMMENT '接收用户ID',
+                               `type` tinyint(3) UNSIGNED NOT NULL DEFAULT 1 COMMENT '通知类型: 1=系统通知, 2=待办, 3=预警, 4=个人',
+                               `level` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'info' COMMENT '级别: info/success/warning/danger',
+                               `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '通知标题',
+                               `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '通知内容',
+                               `biz_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '业务类型(如 order/contract/audit 等)',
+                               `biz_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '业务ID',
+                               `link` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '跳转链接',
+                               `is_read` tinyint(3) UNSIGNED NOT NULL DEFAULT 0 COMMENT '是否已读: 0=未读, 1=已读',
+                               `read_time` datetime NULL DEFAULT NULL COMMENT '阅读时间',
+                               `sender_id` bigint(20) UNSIGNED NULL DEFAULT NULL COMMENT '发送者ID(系统通知为NULL)',
+                               `expire_time` datetime NULL DEFAULT NULL COMMENT '过期时间(为空则永不过期)',
+                               `created_at` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                               `updated_at` datetime NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                               `deleted_at` datetime NULL DEFAULT NULL COMMENT '删除时间',
+                               PRIMARY KEY (`id`) USING BTREE,
+                               INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
+                               INDEX `idx_type`(`type` ASC) USING BTREE,
+                               INDEX `idx_is_read`(`is_read` ASC) USING BTREE,
+                               INDEX `idx_biz`(`biz_type` ASC, `biz_id` ASC) USING BTREE,
+                               INDEX `idx_user_unread`(`user_id` ASC, `is_read` ASC) USING BTREE,
+                               INDEX `idx_created_at`(`created_at` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统通知表(用户维度的站内信)' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of sys_notice
+-- ----------------------------
+INSERT INTO `sys_notice` VALUES (1, 1, 1, 'info', '测试通知', '<p>1111</p>', NULL, NULL, NULL, 1, '2026-06-27 10:49:02', 1, NULL, '2026-06-27 10:47:48', '2026-06-27 10:49:02', NULL);
+INSERT INTO `sys_notice` VALUES (2, 1, 1, 'info', '踩踩踩', '得得', NULL, NULL, NULL, 1, '2026-06-27 10:56:26', 1, NULL, '2026-06-27 10:52:54', '2026-06-27 10:56:26', NULL);
+INSERT INTO `sys_notice` VALUES (3, 2, 1, 'info', '踩踩踩', '得得', NULL, NULL, NULL, 0, NULL, 1, NULL, '2026-06-27 10:52:54', NULL, NULL);
 
 -- ----------------------------
 -- Table structure for sys_operation_log
@@ -735,11 +900,38 @@ CREATE TABLE `sys_operation_log`  (
                                       INDEX `idx_action`(`action` ASC) USING BTREE,
                                       INDEX `idx_status`(`status` ASC) USING BTREE,
                                       INDEX `idx_created_at`(`created_at` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 176 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统操作日志表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 203 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统操作日志表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_operation_log
 -- ----------------------------
+INSERT INTO `sys_operation_log` VALUES (176, 'ai', NULL, 'POST', '/admin/ai/chat/conversations', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"agent_id\":1}', '{\"code\":200,\"msg\":\"创建成功\",\"data\":{\"user_id\":1,\"agent_id\":1,\"title\":\"你好，我是代码助手！可以帮你写代码、修复报错、优化Docker配置、解读服务监控指标、SQL优化，直\",\"updated_at\":\"2026-06-26 17:58:15\",\"created_at\":\"2026-06-26 17:58:15\",\"id\":6}}', 1, NULL, 19, '2026-06-26 17:58:15');
+INSERT INTO `sys_operation_log` VALUES (177, 'ai', NULL, 'POST', '/admin/ai/chat/stream', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"content\":\"你好\",\"conversation_id\":6,\"tool_ids\":[]}', NULL, 0, '未知错误', 3589, '2026-06-26 17:58:34');
+INSERT INTO `sys_operation_log` VALUES (178, 'ai', NULL, 'DELETE', '/admin/ai/chat/conversations/6', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', NULL, '{\"code\":200,\"msg\":\"删除成功\"}', 1, NULL, 57, '2026-06-26 17:58:39');
+INSERT INTO `sys_operation_log` VALUES (179, 'ai', NULL, 'POST', '/admin/ai/chat/conversations', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"agent_id\":1}', '{\"code\":200,\"msg\":\"创建成功\",\"data\":{\"user_id\":1,\"agent_id\":1,\"title\":\"你好，我是代码助手！可以帮你写代码、修复报错、优化Docker配置、解读服务监控指标、SQL优化，直\",\"updated_at\":\"2026-06-26 21:27:18\",\"created_at\":\"2026-06-26 21:27:18\",\"id\":7}}', 1, NULL, 127, '2026-06-26 21:27:18');
+INSERT INTO `sys_operation_log` VALUES (180, 'notice', NULL, 'POST', '/admin/notice', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"user_id\":2,\"type\":1,\"level\":\"info\",\"title\":\"测试通知\",\"content\":\"<p>1111<\\/p>\",\"biz_type\":\"\",\"biz_id\":\"\",\"link\":\"\",\"expire_time\":\"\"}', '{\"code\":200,\"msg\":\"发送成功\",\"data\":{\"id\":1}}', 1, NULL, 130, '2026-06-27 10:47:48');
+INSERT INTO `sys_operation_log` VALUES (181, 'announcement', NULL, 'POST', '/admin/announcement', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"title\":\"测试公告\",\"content\":\"<p>1111<\\/p>\",\"category\":\"announcement\",\"level\":\"info\",\"is_top\":0,\"is_popup\":0,\"status\":0,\"effective_at\":\"\",\"expire_at\":\"\",\"sort\":0,\"remark\":\"\"}', '{\"code\":200,\"msg\":\"创建成功\",\"data\":{\"id\":1}}', 1, NULL, 59, '2026-06-27 10:48:05');
+INSERT INTO `sys_operation_log` VALUES (182, 'announcement', NULL, 'PUT', '/admin/announcement/1/publish', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', NULL, '{\"code\":200,\"msg\":\"发布成功\"}', 1, NULL, 23, '2026-06-27 10:48:05');
+INSERT INTO `sys_operation_log` VALUES (183, 'notice', NULL, 'PUT', '/admin/notice/1/read', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', NULL, '{\"code\":200,\"msg\":\"已标记为已读\"}', 1, NULL, 27, '2026-06-27 10:49:02');
+INSERT INTO `sys_operation_log` VALUES (184, 'notice', NULL, 'POST', '/admin/notice/batch', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"user_ids\":[2,1],\"type\":1,\"level\":\"info\",\"title\":\"踩踩踩\",\"biz_type\":\"\",\"biz_id\":\"\",\"link\":\"\",\"expire_time\":\"\",\"content\":\"得得\"}', '{\"code\":200,\"msg\":\"发送成功\",\"data\":{\"count\":2}}', 1, NULL, 42, '2026-06-27 10:52:54');
+INSERT INTO `sys_operation_log` VALUES (185, 'notice', NULL, 'PUT', '/admin/notice/read-all', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', NULL, '{\"code\":200,\"msg\":\"已全部标记为已读\",\"data\":{\"count\":1}}', 1, NULL, 49, '2026-06-27 10:56:26');
+INSERT INTO `sys_operation_log` VALUES (186, 'menu', NULL, 'POST', '/admin/menu', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"parent_id\":110,\"name\":\"通知收件箱\",\"route_name\":\"NoticeInbox\",\"path\":\"notice-inbox\",\"component\":\"\\/system\\/notice\\/notice-inbox\",\"icon\":\"\",\"type\":2,\"permission\":\"NoticeInbox\",\"sort\":1,\"status\":1,\"is_visible\":0,\"is_cache\":0,\"is_hide_tab\":0,\"is_iframe\":0,\"is_full_page\":0,\"fixed_tab\":0,\"is_external\":0}', '{\"code\":200,\"msg\":\"创建成功\",\"data\":{\"id\":1048}}', 1, NULL, 99, '2026-06-27 11:53:42');
+INSERT INTO `sys_operation_log` VALUES (187, 'announcement', NULL, 'PUT', '/admin/announcement/1', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"title\":\"测试公告\",\"content\":\"<p>1111<\\/p>\",\"category\":\"announcement\",\"level\":\"info\",\"is_top\":1,\"is_popup\":1,\"status\":1,\"effective_at\":\"\",\"expire_at\":\"\",\"sort\":0,\"remark\":\"\"}', '{\"code\":200,\"msg\":\"更新成功\"}', 1, NULL, 101, '2026-06-27 12:44:03');
+INSERT INTO `sys_operation_log` VALUES (188, 'announcement', NULL, 'PUT', '/admin/announcement/1/publish', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', NULL, '{\"code\":200,\"msg\":\"发布成功\"}', 1, NULL, 6, '2026-06-27 12:44:03');
+INSERT INTO `sys_operation_log` VALUES (189, 'announcement', NULL, 'PUT', '/admin/announcement/1', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"title\":\"测试公告\",\"content\":\"<p>1111asdsadas<\\/p>\",\"category\":\"announcement\",\"level\":\"info\",\"is_top\":1,\"is_popup\":1,\"status\":1,\"effective_at\":\"\",\"expire_at\":\"\",\"sort\":0,\"remark\":\"\"}', '{\"code\":200,\"msg\":\"更新成功\"}', 1, NULL, 34, '2026-06-27 13:01:18');
+INSERT INTO `sys_operation_log` VALUES (190, 'announcement', NULL, 'PUT', '/admin/announcement/1/publish', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', NULL, '{\"code\":200,\"msg\":\"发布成功\"}', 1, NULL, 9, '2026-06-27 13:01:18');
+INSERT INTO `sys_operation_log` VALUES (191, 'announcement', NULL, 'POST', '/admin/announcement', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"title\":\"ccccc\",\"content\":\"<p>asddddasd<\\/p>\",\"category\":\"announcement\",\"level\":\"info\",\"is_top\":1,\"is_popup\":1,\"status\":0,\"effective_at\":\"\",\"expire_at\":\"\",\"sort\":0,\"remark\":\"\"}', '{\"code\":200,\"msg\":\"创建成功\",\"data\":{\"id\":2}}', 1, NULL, 39, '2026-06-27 13:01:34');
+INSERT INTO `sys_operation_log` VALUES (192, 'announcement', NULL, 'PUT', '/admin/announcement/2/publish', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', NULL, '{\"code\":200,\"msg\":\"发布成功\"}', 1, NULL, 22, '2026-06-27 13:01:34');
+INSERT INTO `sys_operation_log` VALUES (193, 'announcement', NULL, 'DELETE', '/admin/announcement/1', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', NULL, '{\"code\":200,\"msg\":\"删除成功\"}', 1, NULL, 130, '2026-06-27 13:09:32');
+INSERT INTO `sys_operation_log` VALUES (194, 'announcement', NULL, 'PUT', '/admin/announcement/2', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"title\":\"测试公告..\",\"content\":\"<p>asddddasd<\\/p>\",\"category\":\"announcement\",\"level\":\"info\",\"is_top\":1,\"is_popup\":1,\"status\":1,\"effective_at\":\"\",\"expire_at\":\"\",\"sort\":0,\"remark\":\"\"}', '{\"code\":200,\"msg\":\"更新成功\"}', 1, NULL, 53, '2026-06-27 13:10:14');
+INSERT INTO `sys_operation_log` VALUES (195, 'announcement', NULL, 'PUT', '/admin/announcement/2/publish', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', NULL, '{\"code\":200,\"msg\":\"发布成功\"}', 1, NULL, 7, '2026-06-27 13:10:14');
+INSERT INTO `sys_operation_log` VALUES (196, 'ai', NULL, 'POST', '/admin/ai/chat/stream', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"conversation_id\":7,\"agent_id\":1,\"content\":\"你好\"}', NULL, 0, '未知错误', 2278, '2026-06-27 14:08:03');
+INSERT INTO `sys_operation_log` VALUES (197, 'ai', NULL, 'POST', '/admin/ai/chat/stream', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"agent_id\":1,\"content\":\"你好\"}', NULL, 0, '未知错误', 2761, '2026-06-27 14:12:08');
+INSERT INTO `sys_operation_log` VALUES (198, 'ai', NULL, 'POST', '/admin/ai/chat/stream', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"conversation_id\":8,\"agent_id\":1,\"content\":\"你好\"}', NULL, 0, '未知错误', 1859, '2026-06-27 14:20:52');
+INSERT INTO `sys_operation_log` VALUES (199, 'ai', NULL, 'POST', '/admin/ai/chat/stream', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"conversation_id\":8,\"agent_id\":1,\"content\":\"你好\"}', NULL, 0, '未知错误', 2509, '2026-06-27 14:23:25');
+INSERT INTO `sys_operation_log` VALUES (200, 'ai', NULL, 'POST', '/admin/ai/chat/stream', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"conversation_id\":8,\"agent_id\":1,\"content\":\"你好\"}', NULL, 0, '未知错误', 2400, '2026-06-27 14:26:17');
+INSERT INTO `sys_operation_log` VALUES (201, 'ai', NULL, 'POST', '/admin/ai/chat/stream', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"content\":\"你好\",\"conversation_id\":8,\"tool_ids\":[]}', NULL, 0, '未知错误', 1654, '2026-06-27 14:26:30');
+INSERT INTO `sys_operation_log` VALUES (202, 'ai', NULL, 'POST', '/admin/ai/chat/stream', '172.18.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0', 1, 'admin', '{\"agent_id\":1,\"content\":\"帮我生成一段示例代码\"}', NULL, 0, '未知错误', 6544, '2026-06-27 14:42:52');
 
 -- ----------------------------
 -- Table structure for sys_role
@@ -783,7 +975,7 @@ CREATE TABLE `sys_role_menu`  (
                                   UNIQUE INDEX `uk_role_menu`(`role_id` ASC, `menu_id` ASC) USING BTREE,
                                   INDEX `idx_role_id`(`role_id` ASC) USING BTREE,
                                   INDEX `idx_menu_id`(`menu_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 167 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '角色菜单关联表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 187 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '角色菜单关联表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_role_menu
@@ -861,6 +1053,22 @@ INSERT INTO `sys_role_menu` VALUES (162, 1, 224, '2026-06-25 20:50:58');
 INSERT INTO `sys_role_menu` VALUES (163, 1, 225, '2026-06-25 20:50:58');
 INSERT INTO `sys_role_menu` VALUES (164, 1, 226, '2026-06-25 20:50:58');
 INSERT INTO `sys_role_menu` VALUES (165, 1, 227, '2026-06-25 20:50:58');
+INSERT INTO `sys_role_menu` VALUES (170, 1, 110, '2026-06-26 22:55:00');
+INSERT INTO `sys_role_menu` VALUES (171, 1, 111, '2026-06-26 22:55:00');
+INSERT INTO `sys_role_menu` VALUES (172, 1, 112, '2026-06-26 22:55:00');
+INSERT INTO `sys_role_menu` VALUES (173, 1, 113, '2026-06-26 22:55:00');
+INSERT INTO `sys_role_menu` VALUES (174, 1, 114, '2026-06-26 22:55:00');
+INSERT INTO `sys_role_menu` VALUES (175, 1, 115, '2026-06-26 22:55:00');
+INSERT INTO `sys_role_menu` VALUES (176, 1, 116, '2026-06-26 22:55:00');
+INSERT INTO `sys_role_menu` VALUES (177, 1, 117, '2026-06-26 22:55:00');
+INSERT INTO `sys_role_menu` VALUES (178, 1, 118, '2026-06-26 22:55:00');
+INSERT INTO `sys_role_menu` VALUES (179, 1, 119, '2026-06-26 22:55:00');
+INSERT INTO `sys_role_menu` VALUES (180, 1, 120, '2026-06-26 22:55:00');
+INSERT INTO `sys_role_menu` VALUES (181, 1, 121, '2026-06-26 22:55:00');
+INSERT INTO `sys_role_menu` VALUES (182, 1, 122, '2026-06-26 22:55:00');
+INSERT INTO `sys_role_menu` VALUES (183, 1, 125, '2026-06-27 09:25:04');
+INSERT INTO `sys_role_menu` VALUES (184, 2, 125, '2026-06-27 09:25:04');
+INSERT INTO `sys_role_menu` VALUES (186, 1, 200, '2026-06-27 15:21:35');
 
 -- ----------------------------
 -- Table structure for sys_user
@@ -897,7 +1105,7 @@ CREATE TABLE `sys_user`  (
 -- ----------------------------
 -- Records of sys_user
 -- ----------------------------
-INSERT INTO `sys_user` VALUES (1, 'admin', '$2y$10$O9DuwMJ.hvBtrSAhb9vJb.lJZUxQN87qUbb1qWnXyAoJiirVN7mCS', 'hacked', NULL, '251853527@qq.com', '18181818811', 1, 1, 2, '172.18.0.1', '2026-06-26 17:39:54', 38, 0, NULL, NULL, '2026-04-23 18:28:31', 1, '2026-06-26 17:39:54', NULL);
+INSERT INTO `sys_user` VALUES (1, 'admin', '$2y$10$O9DuwMJ.hvBtrSAhb9vJb.lJZUxQN87qUbb1qWnXyAoJiirVN7mCS', 'hacked', NULL, '251853527@qq.com', '18181818811', 1, 1, 2, '172.18.0.1', '2026-06-27 14:44:03', 45, 2, NULL, NULL, '2026-04-23 18:28:31', 1, '2026-06-27 14:55:44', NULL);
 INSERT INTO `sys_user` VALUES (2, 'user', '$2y$10$mtQ5lkNaMaYpbiHYCLyGPOw5DtzG9rov/vxN8D9P1psPIjHugnpHK', 'user', NULL, NULL, NULL, 0, 1, 1, '127.0.0.1', '2026-06-23 03:11:08', 4, 0, NULL, 1, '2026-06-22 17:05:53', 1, '2026-06-24 22:59:36', NULL);
 
 -- ----------------------------
@@ -920,5 +1128,192 @@ CREATE TABLE `sys_user_role`  (
 -- ----------------------------
 INSERT INTO `sys_user_role` VALUES (12, 1, 1, '2026-06-23 01:48:44');
 INSERT INTO `sys_user_role` VALUES (13, 2, 2, '2026-06-24 22:59:36');
+
+-- ----------------------------
+-- Table structure for wechat_config
+-- ----------------------------
+DROP TABLE IF EXISTS `wechat_config`;
+CREATE TABLE `wechat_config`  (
+                                  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+                                  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '配置名称',
+                                  `app_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '应用类型:official_account/mini_program/open_platform/work/pay',
+                                  `app_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'AppID / CorpID',
+                                  `secret` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT 'AppSecret',
+                                  `token` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT 'Token',
+                                  `aes_key` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT 'EncodingAESKey',
+                                  `mch_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '商户号',
+                                  `pay_key` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '支付密钥',
+                                  `cert_path` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '证书路径',
+                                  `key_path` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '密钥路径',
+                                  `extra` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '扩展配置(JSON)',
+                                  `is_default` tinyint(1) NULL DEFAULT 0 COMMENT '是否默认',
+                                  `status` tinyint(1) NULL DEFAULT 1 COMMENT '状态:0禁用/1启用',
+                                  `created_at` timestamp NULL DEFAULT NULL COMMENT '创建时间',
+                                  `updated_at` timestamp NULL DEFAULT NULL COMMENT '更新时间',
+                                  PRIMARY KEY (`id`) USING BTREE,
+                                  INDEX `wechat_config_app_type_index`(`app_type` ASC) USING BTREE,
+                                  INDEX `wechat_config_status_index`(`status` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '微信配置表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of wechat_config
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for wechat_material
+-- ----------------------------
+DROP TABLE IF EXISTS `wechat_material`;
+CREATE TABLE `wechat_material`  (
+                                    `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+                                    `app_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT 'official_account' COMMENT '应用类型',
+                                    `media_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '媒体ID',
+                                    `type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '素材类型:image/voice/video/news',
+                                    `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '标题',
+                                    `description` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '描述',
+                                    `url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '素材URL',
+                                    `local_path` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '本地路径',
+                                    `extra` json NULL COMMENT '扩展信息(JSON)',
+                                    `sync_time` timestamp NULL DEFAULT NULL COMMENT '同步时间',
+                                    `created_at` timestamp NULL DEFAULT NULL COMMENT '创建时间',
+                                    `updated_at` timestamp NULL DEFAULT NULL COMMENT '更新时间',
+                                    PRIMARY KEY (`id`) USING BTREE,
+                                    INDEX `wechat_material_media_id_index`(`media_id` ASC) USING BTREE,
+                                    INDEX `wechat_material_type_index`(`type` ASC) USING BTREE,
+                                    INDEX `wechat_material_app_type_index`(`app_type` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '微信素材表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of wechat_material
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for wechat_menu
+-- ----------------------------
+DROP TABLE IF EXISTS `wechat_menu`;
+CREATE TABLE `wechat_menu`  (
+                                `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+                                `app_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT 'official_account' COMMENT '应用类型',
+                                `parent_id` bigint(20) UNSIGNED NULL DEFAULT 0 COMMENT '父菜单ID',
+                                `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '菜单名称',
+                                `type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '菜单类型:click/view/miniprogram等',
+                                `key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '菜单KEY值',
+                                `url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '网页链接',
+                                `appid` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '小程序AppID',
+                                `pagepath` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '小程序页面路径',
+                                `sort` int(11) NULL DEFAULT 0 COMMENT '排序',
+                                `status` tinyint(1) NULL DEFAULT 1 COMMENT '状态:0禁用/1启用',
+                                `created_at` timestamp NULL DEFAULT NULL COMMENT '创建时间',
+                                `updated_at` timestamp NULL DEFAULT NULL COMMENT '更新时间',
+                                PRIMARY KEY (`id`) USING BTREE,
+                                INDEX `wechat_menu_parent_id_index`(`parent_id` ASC) USING BTREE,
+                                INDEX `wechat_menu_app_type_index`(`app_type` ASC) USING BTREE,
+                                INDEX `wechat_menu_sort_index`(`sort` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '微信菜单表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of wechat_menu
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for wechat_message
+-- ----------------------------
+DROP TABLE IF EXISTS `wechat_message`;
+CREATE TABLE `wechat_message`  (
+                                   `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+                                   `msg_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '消息ID',
+                                   `app_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT 'official_account' COMMENT '应用类型',
+                                   `msg_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '消息类型:text/image/voice/video/event等',
+                                   `event` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '事件类型:subscribe/unsubscribe/SCAN等',
+                                   `from_user` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '发送方帐号(OpenID)',
+                                   `to_user` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '接收方帐号',
+                                   `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '消息内容(JSON)',
+                                   `receive_time` timestamp NULL DEFAULT NULL COMMENT '接收时间',
+                                   `send_status` tinyint(4) NULL DEFAULT 0 COMMENT '发送状态:0待发送/1成功/2失败',
+                                   `send_time` timestamp NULL DEFAULT NULL COMMENT '发送时间',
+                                   `send_result` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '发送结果',
+                                   `created_at` timestamp NULL DEFAULT NULL COMMENT '创建时间',
+                                   `updated_at` timestamp NULL DEFAULT NULL COMMENT '更新时间',
+                                   PRIMARY KEY (`id`) USING BTREE,
+                                   INDEX `wechat_message_msg_id_index`(`msg_id` ASC) USING BTREE,
+                                   INDEX `wechat_message_from_user_index`(`from_user` ASC) USING BTREE,
+                                   INDEX `wechat_message_msg_type_index`(`msg_type` ASC) USING BTREE,
+                                   INDEX `wechat_message_receive_time_index`(`receive_time` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '微信消息记录表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of wechat_message
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for wechat_template
+-- ----------------------------
+DROP TABLE IF EXISTS `wechat_template`;
+CREATE TABLE `wechat_template`  (
+                                    `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+                                    `app_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT 'official_account' COMMENT '应用类型',
+                                    `template_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '模板ID',
+                                    `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '模板标题',
+                                    `primary_industry` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '主行业',
+                                    `deputy_industry` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '副行业',
+                                    `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '模板内容',
+                                    `example` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '示例',
+                                    `params` json NULL COMMENT '参数配置(JSON)',
+                                    `status` tinyint(1) NULL DEFAULT 1 COMMENT '状态:0禁用/1启用',
+                                    `created_at` timestamp NULL DEFAULT NULL COMMENT '创建时间',
+                                    `updated_at` timestamp NULL DEFAULT NULL COMMENT '更新时间',
+                                    PRIMARY KEY (`id`) USING BTREE,
+                                    INDEX `wechat_template_template_id_index`(`template_id` ASC) USING BTREE,
+                                    INDEX `wechat_template_app_type_index`(`app_type` ASC) USING BTREE,
+                                    INDEX `wechat_template_status_index`(`status` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '微信模板消息表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of wechat_template
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for wechat_user
+-- ----------------------------
+DROP TABLE IF EXISTS `wechat_user`;
+CREATE TABLE `wechat_user`  (
+                                `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+                                `user_id` bigint(20) UNSIGNED NULL DEFAULT NULL COMMENT '绑定系统用户ID',
+                                `openid` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户标识',
+                                `unionid` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '开放平台统一ID',
+                                `app_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT 'official_account' COMMENT '应用类型:official_account/mini_program/work',
+                                `nickname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '昵称',
+                                `gender` tinyint(4) NULL DEFAULT 0 COMMENT '性别:0未知/1男/2女',
+                                `avatar` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '头像',
+                                `city` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '城市',
+                                `province` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '省份',
+                                `country` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '国家',
+                                `language` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '语言',
+                                `subscribe` tinyint(4) NULL DEFAULT 0 COMMENT '是否关注:0否/1是',
+                                `subscribe_time` timestamp NULL DEFAULT NULL COMMENT '关注时间',
+                                `subscribe_scene` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '关注来源',
+                                `qr_scene` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '扫码场景值',
+                                `qr_scan_time` timestamp NULL DEFAULT NULL COMMENT '扫码时间',
+                                `latitude` decimal(10, 7) NULL DEFAULT NULL COMMENT '纬度',
+                                `longitude` decimal(10, 7) NULL DEFAULT NULL COMMENT '经度',
+                                `location_precision` decimal(10, 2) NULL DEFAULT NULL COMMENT '地理位置精度',
+                                `location_time` timestamp NULL DEFAULT NULL COMMENT '位置上报时间',
+                                `remark` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '备注',
+                                `group_id` int(11) NULL DEFAULT NULL COMMENT '分组ID',
+                                `tagid_list` json NULL COMMENT '标签ID列表',
+                                `extra` json NULL COMMENT '扩展信息',
+                                `created_at` timestamp NULL DEFAULT NULL COMMENT '创建时间',
+                                `updated_at` timestamp NULL DEFAULT NULL COMMENT '更新时间',
+                                `deleted_at` timestamp NULL DEFAULT NULL COMMENT '删除时间',
+                                PRIMARY KEY (`id`) USING BTREE,
+                                UNIQUE INDEX `wechat_user_openid_unique`(`openid` ASC) USING BTREE,
+                                UNIQUE INDEX `wechat_user_unionid_unique`(`unionid` ASC) USING BTREE,
+                                INDEX `wechat_user_user_id_index`(`user_id` ASC) USING BTREE,
+                                INDEX `wechat_user_subscribe_index`(`subscribe` ASC) USING BTREE,
+                                INDEX `wechat_user_app_type_index`(`app_type` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '微信用户表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of wechat_user
+-- ----------------------------
 
 SET FOREIGN_KEY_CHECKS = 1;

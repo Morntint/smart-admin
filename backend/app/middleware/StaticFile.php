@@ -31,6 +31,18 @@ class StaticFile implements MiddlewareInterface
         /** @var Response $response */
         $response = $handler($request);
 
+        // 静态资源统一加 nosniff，禁止浏览器按内容猜测 MIME。
+        // 即便上层校验疏漏让 .svg / 不正确扩展名落盘，浏览器也不会再把它当成 image/svg+xml 执行内嵌脚本。
+        if ($response->getHeader('X-Content-Type-Options') === null) {
+            $response->withHeader('X-Content-Type-Options', 'nosniff');
+        }
+        // uploads 路径下的资源不允许嵌入到 iframe，避免被点击劫持托盘 / 钓鱼
+        if (str_starts_with('/' . ltrim($request->path(), '/'), '/uploads/')
+            && $response->getHeader('X-Frame-Options') === null
+        ) {
+            $response->withHeader('X-Frame-Options', 'DENY');
+        }
+
         return $this->withCors($request, $response);
     }
 }
